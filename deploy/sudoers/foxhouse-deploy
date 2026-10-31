@@ -1,0 +1,9 @@
+# /etc/sudoers.d/foxhouse-deploy — root:root 0440, vérifié par `visudo -c`.
+# Installé à la main (root, hors déploiement) : OPERATIONS.md §3.7.
+# Le compte django ne peut que redémarrer le service de FoxHouse et
+# recharger nginx — rien d'autre, sans variable d'environnement. Le déploiement
+# lui-même n'en a pas besoin (SSM redémarre en root) : c'est pour l'exploitation.
+Cmnd_Alias FOXHOUSE_SVC_CTRL = /bin/systemctl restart foxhouse-gunicorn
+Cmnd_Alias FOXHOUSE_WEB_CTRL = /usr/sbin/nginx -t, /bin/systemctl reload nginx
+django ALL=(root) NOPASSWD: FOXHOUSE_SVC_CTRL, FOXHOUSE_WEB_CTRL
+Defaults!FOXHOUSE_SVC_CTRL,FOXHOUSE_WEB_CTRL !setenv, !env_keep

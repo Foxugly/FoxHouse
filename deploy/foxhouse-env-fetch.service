@@ -1,0 +1,31 @@
+# FoxHouse — /run/foxhouse/.env depuis SSM (/foxhouse/prod/*), à chaque démarrage.
+# Installé par le déploiement (foxhouse-deploy-privileged.sh) depuis le miroir de root.
+# Rotation d'un secret : systemctl restart foxhouse-env-fetch, PUIS foxhouse-gunicorn.
+[Unit]
+Description=FoxHouse — configuration depuis SSM vers /run/foxhouse/.env
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+User=root
+RuntimeDirectory=foxhouse
+RuntimeDirectoryMode=0750
+RuntimeDirectoryPreserve=yes
+# Le rôle d'instance pour `aws`, jamais /root/.aws (OPERATIONS.md §3.19) ;
+# ProtectHome=yes le cache aussi.
+Environment=AWS_SHARED_CREDENTIALS_FILE=/dev/null
+Environment=AWS_CONFIG_FILE=/dev/null
+# Oneshot root qui n'écrit que /run/foxhouse : `strict` est permis ici
+# (OPERATIONS.md §3.22), jamais sur une unité applicative.
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+NoNewPrivileges=yes
+RestrictSUIDSGID=yes
+ExecStart=/usr/local/sbin/foxhouse-env-fetch.sh
+TimeoutStartSec=120
+
+[Install]
+WantedBy=multi-user.target
