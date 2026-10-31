@@ -1,0 +1,11 @@
+@if (image(); as src) {
+  <img class="face" [src]="src" [alt]="alt()" draggable="false" />
+  @if (badge(); as b) {
+    <span class="badge">{{ b }}</span>
+  }
+  @if (index(); as i) {
+    <span class="index" [class.rouge]="i.rouge">{{ i.texte }}</span>
+  }
+} @else {
+  <div class="dos"></div>
+}
