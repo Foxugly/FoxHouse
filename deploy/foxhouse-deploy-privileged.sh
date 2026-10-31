@@ -28,15 +28,21 @@ SHA="${2:?usage : $0 <miroir-git> <sha>}"
 blob() { git --git-dir="$M" show "$SHA:$1"; }
 
 # Installe le blob $1 en $2 (root:root, mode $3) s'il diffère ; rend 0 si changé.
+# Appelée sous `if` / `||`, où `set -e` ne joue plus : chaque échec sort
+# explicitement, sinon un blob introuvable installerait un fichier vide.
 installer() {
     local source="$1" cible="$2" mode="$3" neuf
-    neuf=$(mktemp)
-    blob "$source" > "$neuf"
+    neuf=$(mktemp) || exit 1
+    if ! blob "$source" > "$neuf" || [ ! -s "$neuf" ]; then
+        echo "ERREUR : $source introuvable ou vide au commit $SHA" >&2
+        rm -f "$neuf"
+        exit 1
+    fi
     if cmp -s "$neuf" "$cible"; then
         rm -f "$neuf"
         return 1
     fi
-    install -o root -g root -m "$mode" "$neuf" "$cible"
+    install -o root -g root -m "$mode" "$neuf" "$cible" || exit 1
     rm -f "$neuf"
     echo "  installé : $cible"
 }
