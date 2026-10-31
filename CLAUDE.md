@@ -92,6 +92,15 @@ cible}` ; les libellés viennent du serveur. Aucun mot propre à un jeu (« rami
 `src/testing/` peuvent les contenir. Thème clair/sombre par `prefers-color-scheme` (variables CSS),
 écran de 360 px minimum sans défilement horizontal. Captures : `docs/captures/`.
 
+## Production (`foxhouse.foxugly.com`)
+
+gunicorn `127.0.0.1:8013` (WSGI, pas de Redis), PostgreSQL `foxhouse`, SSM `/foxhouse/prod` →
+`/run/foxhouse/.env`, dossier `/var/www/django_websites/FoxHouse`. Un push vers `main` lance
+`deploy.yml` : la CI (`ci.yml`, appelée) puis le déploiement par bundle S3 + SSM. Mise en service,
+étapes hors dépôt et vérifications : `deploy/README.md`. Garde-fous des unités, du vhost et du
+pipeline : `backend/config/test_deploiement.py`. Version déployée : `backend/RELEASE` (écrit par la CI),
+rendue par `/health/`.
+
 ## Ajouter un jeu
 
 1. Créer l'app (`manage.py startapp <jeu>`) ; ses règles n'importent pas Django.
