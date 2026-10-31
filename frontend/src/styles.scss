@@ -14,6 +14,11 @@
   --trait: #cfd6d1;
   --attenue: #5b6a63;
   --bouton: #1f5c47;
+  --fond: #e9ece8;
+  --erreur-fond: #fbe9e7;
+  --erreur-trait: #e8b4ad;
+  --erreur-texte: #8a1c12;
+  --hauteur-entete: 48px;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -31,6 +36,10 @@
     --trait: #2c3833;
     --attenue: #98a8a0;
     --bouton: #2f8a69;
+    --fond: #111613;
+    --erreur-fond: #3a1a17;
+    --erreur-trait: #6e2e27;
+    --erreur-texte: #f4c7c0;
   }
 }
 
@@ -42,5 +51,5 @@ body {
 body {
   margin: 0;
   color: var(--texte);
-  background: var(--feutre);
+  background: var(--fond);
 }

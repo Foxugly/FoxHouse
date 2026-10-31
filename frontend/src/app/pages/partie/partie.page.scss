@@ -1,0 +1,170 @@
+:host {
+  display: block;
+  font-family: system-ui, sans-serif;
+}
+
+/* Table à gauche, panneau à droite ; sur écran étroit, le panneau passe au-dessus. */
+.page {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 290px;
+  gap: 14px;
+  box-sizing: border-box;
+  height: calc(100dvh - var(--hauteur-entete));
+  padding-block: 14px;
+  padding-inline: max(16px, env(safe-area-inset-left, 0px))
+    max(16px, env(safe-area-inset-right, 0px));
+}
+
+/* La table mesure cette zone : elle doit avoir une vraie hauteur. */
+.zone-table {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+}
+
+.panneau {
+  display: grid;
+  gap: 12px;
+  align-content: start;
+  min-width: 0;
+  overflow-y: auto;
+}
+
+@media (max-width: 760px) {
+  .page {
+    grid-template-columns: minmax(0, 1fr);
+    height: auto;
+  }
+
+  .panneau {
+    order: -1;
+    overflow: visible;
+  }
+
+  .zone-table {
+    height: calc(100dvh - var(--hauteur-entete) - 28px);
+    min-height: 420px;
+  }
+}
+
+.bandeau {
+  position: absolute;
+  top: 18px;
+  left: 50%;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: calc(100% - 48px);
+  padding: 6px 6px 6px 14px;
+  box-sizing: border-box;
+  color: var(--etiquette-texte);
+  background: var(--etiquette);
+  border-radius: 99px;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 30%);
+  transform: translateX(-50%);
+}
+
+.bandeau .message {
+  overflow: hidden;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bandeau button {
+  flex: none;
+  min-height: 32px;
+  padding: 4px 12px;
+  font:
+    600 0.8rem system-ui,
+    sans-serif;
+  color: #fff;
+  background: var(--bouton);
+  border: 0;
+  border-radius: 99px;
+  cursor: pointer;
+}
+
+.erreur {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 12px;
+  color: var(--erreur-texte);
+  background: var(--erreur-fond);
+  border: 1px solid var(--erreur-trait);
+  border-radius: 10px;
+}
+
+.erreur p {
+  flex: 1;
+  margin: 0;
+  font-size: 0.85rem;
+}
+
+.fermer {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  font-size: 1.1rem;
+  line-height: 1;
+  color: inherit;
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.confirmation {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  color: var(--texte);
+  background: var(--panneau);
+  border: 1px solid var(--trait);
+  border-radius: 10px;
+}
+
+.confirmation p {
+  margin: 0;
+  font-size: 0.85rem;
+}
+
+.boutons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.panneau > button,
+.boutons button {
+  min-height: 40px;
+  padding: 7px 12px;
+  font:
+    500 0.85rem system-ui,
+    sans-serif;
+  color: #fff;
+  background: var(--bouton);
+  border: 0;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+button.secondaire {
+  color: var(--texte);
+  background: var(--panneau);
+  border: 1px solid var(--trait);
+}
+
+button:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.chargement {
+  margin: 0;
+  padding: 24px 16px;
+  color: var(--texte);
+}
