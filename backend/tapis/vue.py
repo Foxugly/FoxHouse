@@ -64,7 +64,6 @@ def _valider_sieges(sieges):
                 and (isinstance(k.get("valeur"), str) or _est_int(k.get("valeur"))),
                 "compteur mal formé",
             )
-    _exiger(sieges[0]["id"] == 0, "le premier siège est celui qui regarde (id 0)")
     return ids
 
 

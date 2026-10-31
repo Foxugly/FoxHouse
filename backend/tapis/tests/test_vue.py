@@ -59,6 +59,13 @@ class TestVue(SimpleTestCase):
     def test_vue_valide(self):
         valider_vue(vue_minimale())
 
+    def test_regardeur_n_est_pas_forcement_le_siege_0(self):
+        v = vue_minimale()
+        v["sieges"][0]["id"] = 2
+        v["sieges"][1]["id"] = 3
+        v["zones"][0]["siege"] = 2
+        valider_vue(v)
+
     def test_resultat_valide(self):
         v = vue_minimale()
         v["resultat"] = {"titre": "Fin", "colonnes": ["Joueur", "Points"], "lignes": [["Toi", 0]]}
@@ -82,7 +89,7 @@ class TestVue(SimpleTestCase):
         self._refuse(lambda v: v.update(schema=2))
         self._refuse(lambda v: v.pop("menu"))
         self._refuse(lambda v: v["sieges"].clear())
-        self._refuse(lambda v: v["sieges"][0].update(id=5))
+        self._refuse(lambda v: v["sieges"][1].update(id=0))
         self._refuse(lambda v: v["zones"].append(dict(v["zones"][0])))
         self._refuse(
             lambda v: v["zones"][0]["cartes"].append(
