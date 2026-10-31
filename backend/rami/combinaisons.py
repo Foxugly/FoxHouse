@@ -10,7 +10,6 @@ from dataclasses import dataclass
 from tapis.cartes import ENSEIGNES, VALEURS, enseigne, est_carte, est_joker, nature, valeur
 
 REGLES_AS = ("bas1_haut11", "toujours1", "toujours11")
-_RANG_ROI = VALEURS.index("K")
 _RANG_AS_HAUT = len(VALEURS)  # l'as placé au-dessus du roi
 
 
@@ -55,7 +54,9 @@ def _suite(elements: list[tuple[str, str]], libre: str | None) -> Combinaison | 
                 continue
             if trous:
                 r = trous[0]
-            elif haut < _RANG_ROI:  # en haut si possible, jamais un as au-dessus du roi
+            elif haut + 1 < _RANG_AS_HAUT or (haut + 1 == _RANG_AS_HAUT and "A" not in vals):
+                # En haut si possible : l'as au-dessus du roi aussi, sauf si la suite
+                # a déjà un as en bas ; rien au-dessus d'un as en haut.
                 r = haut + 1
             elif bas > (1 if as_haut else 0):
                 r = bas - 1

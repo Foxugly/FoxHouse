@@ -1,3 +1,5 @@
+import json
+
 from django.test import SimpleTestCase
 
 from rami.combinaisons import (
@@ -38,10 +40,25 @@ class TestSuites(SimpleTestCase):
         self.assertEqual(comb.cartes, tuple(ids("5C 6C JK")))
         self.assertEqual(comb.jokers, (("JK-1", "7C"),))
 
-    def test_joker_en_bas_quand_rien_au_dessus(self):
+    def test_joker_as_au_dessus_du_roi(self):
         comb = analyser(ids("QC KC JK"))
-        self.assertEqual(comb.cartes, tuple(ids("JK QC KC")))
-        self.assertEqual(comb.jokers, (("JK-1", "JC"),))
+        self.assertEqual(comb.cartes, tuple(ids("QC KC JK")))
+        self.assertEqual(comb.jokers, (("JK-1", "AC"),))
+
+    def test_joker_en_bas_quand_rien_au_dessus(self):
+        comb = analyser(ids("KS AS JK"))
+        self.assertEqual(comb.cartes, tuple(ids("JK KS AS")))
+        self.assertEqual(comb.jokers, (("JK-1", "QS"),))
+
+    def test_pas_d_as_en_haut_avec_un_as_en_bas(self):
+        comb = analyser(ids("AS 2S JK"))
+        self.assertEqual(comb.jokers, (("JK-1", "3S"),))
+
+    def test_treize_cartes_joker_as_en_haut(self):
+        cartes = [f"{v}C-1" for v in "2 3 4 5 6 7 8 9 10 J Q K".split()] + ["JK-1"]
+        comb = analyser(cartes)
+        self.assertEqual(comb.cartes, tuple(cartes))
+        self.assertEqual(comb.jokers, (("JK-1", "AC"),))
 
     def test_joker_dans_un_trou(self):
         comb = analyser(ids("4H JK 6H"))
@@ -124,7 +141,7 @@ class TestPoints(SimpleTestCase):
     def test_joker_vaut_la_carte_representee(self):
         self.assertEqual(points(analyser(ids("5C 6C JK")), BAS1_HAUT11), 18)
         self.assertEqual(points(analyser(ids("KH KS JK")), BAS1_HAUT11), 30)
-        self.assertEqual(points(analyser(ids("QC KC JK")), BAS1_HAUT11), 30)
+        self.assertEqual(points(analyser(ids("QC KC JK")), BAS1_HAUT11), 31)
 
     def test_regle_inconnue(self):
         with self.assertRaises(ValueError):
@@ -136,6 +153,11 @@ class TestAjouter(SimpleTestCase):
         comb = ajouter(analyser(ids("5C 6C JK")), ["8C-1"])
         self.assertEqual(comb.cartes, tuple(ids("5C 6C JK 8C")))
         self.assertEqual(comb.jokers, (("JK-1", "7C"),))
+
+    def test_ajout_sous_un_joker_as(self):
+        comb = ajouter(analyser(ids("QC KC JK")), ["JC-1"])
+        self.assertEqual(comb.cartes, tuple(ids("JC QC KC JK")))
+        self.assertEqual(comb.jokers, (("JK-1", "AC"),))
 
     def test_le_joker_ne_se_deplace_pas(self):
         self.assertIsNone(ajouter(analyser(ids("5C 6C JK")), ["7C-1"]))
@@ -197,8 +219,6 @@ class TestDict(SimpleTestCase):
                 self.assertEqual(depuis_dict(vers_dict(comb)), comb)
 
     def test_dict_json(self):
-        import json
-
         d = vers_dict(analyser(ids("5C 6C JK")))
         self.assertEqual(json.loads(json.dumps(d)), d)
         self.assertEqual(
