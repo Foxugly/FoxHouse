@@ -24,7 +24,7 @@ def actions_permises(etat: dict, j: int) -> list[dict]:
         return []
     if phase == "piocher":
         actions = [_action("piocher", "Piocher", 0, 0)]
-        if etat["defausse"]:
+        if etat["defausse"] and not etat.get("defausse_rendue"):
             actions.append(_action("prendre_defausse", "Prendre la défausse", 0, 0))
         return actions
     if phase == "fin_manche":
@@ -41,7 +41,17 @@ def actions_permises(etat: dict, j: int) -> list[dict]:
         actions.append(_action("ajouter", "Ajouter à la combinaison", 1, 12, "groupe"))
         if etat["options"]["recuperation_joker"] == "apres_ouverture":
             actions.append(_action("recuperer_joker", "Récupérer le joker", 1, 1, "groupe"))
+    if etat["options"]["defausse_a_poser"] and _prise_non_posee(etat, j):
+        actions.append(_action("rendre_defausse", "Reposer la carte prise", 0, 0))
     return actions
+
+
+def _prise_non_posee(etat: dict, j: int) -> bool:
+    """La carte prise à la défausse est encore dans la main ou le brouillon de j."""
+    prise = etat["prise"]
+    return prise is not None and (
+        prise in etat["mains"][j] or any(prise in comb["cartes"] for comb in etat["brouillon"])
+    )
 
 
 def _nb_cartes(etat: dict, s: int) -> int:
@@ -140,10 +150,10 @@ def _menu(etat: dict, j: int) -> list[dict]:
 
 
 def _resultat(etat: dict, j: int) -> dict | None:
+    totaux = _totaux(etat)
     if etat["phase"] == "fin_manche":
         titre = f"Fin de la manche {etat['manche']}"
     elif etat["phase"] == "terminee":
-        totaux = _totaux(etat)
         gagnants = [s for s in range(etat["nb"]) if totaux[s] == min(totaux)]
         if len(gagnants) == 1:
             titre = f"Fin de la partie — {_verbe(gagnants[0], 'gagnes', 'gagne')}"
@@ -152,7 +162,6 @@ def _resultat(etat: dict, j: int) -> dict | None:
     else:
         return None
     manches = len(etat["penalites"])
-    totaux = _totaux(etat)
     return {
         "titre": titre,
         "colonnes": ["Joueur"] + [f"Manche {m}" for m in range(1, manches + 1)] + ["Total"],

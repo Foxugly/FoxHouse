@@ -7,6 +7,7 @@ from rami.options import OPTIONS
 from tapis import registre
 from tapis.jeu import CoupRefuse
 from tapis.options import valider
+from tapis.vue import valider_vue
 
 SUITE = ["7H-1", "8H-1", "9H-1"]
 BRELAN = ["9S-1", "9D-1", "9C-1"]
@@ -16,9 +17,16 @@ def partie(nb=2, graine=7, **options):
     return Rami().nouvelle_partie(valider(OPTIONS, options), nb, graine)
 
 
+def retirer_ailleurs(etat, cartes):
+    """Chaque carte n'existe qu'une fois : on l'ôte de la pioche, de la défausse et des mains."""
+    for pile in [etat["pioche"], etat["defausse"], *etat["mains"]]:
+        pile[:] = [c for c in pile if c not in cartes]
+
+
 def etat_jouer(main, nb=2, **options):
     """Le joueur 0 a pioché et tient exactement `main`."""
     etat = partie(nb, **options)
+    retirer_ailleurs(etat, main)
     etat["mains"][0] = list(main)
     etat["phase"] = "jouer"
     return etat
@@ -27,6 +35,7 @@ def etat_jouer(main, nb=2, **options):
 def etat_ouvert(main, **options):
     """Le joueur 0 a ouvert ; la table porte g1 = 7-8-9 de cœur et g2 = 4-joker-6 de pique."""
     etat = etat_jouer(main, **options)
+    retirer_ailleurs(etat, SUITE + ["4S-1", "JK-1", "6S-1"])
     etat["ouvert"][0] = True
     etat["table"] = [
         {"id": "g1", "auteur": 0, "type": "suite", "cartes": SUITE, "jokers": {}},
@@ -198,6 +207,48 @@ class AppliquerTests(SimpleTestCase):
         e, _ = rami.appliquer(e, 0, {"action": "prendre_defausse"})
         e, _ = rami.appliquer(e, 0, {"action": "defausser", "cartes": [e["mains"][0][0]]})
         self.assertEqual(e["actif"], 1)
+
+    def test_rendre_defausse_debloque(self):
+        rami = Rami()
+        e = partie(defausse_a_poser=True)
+        retirer_ailleurs(e, ["2S-2"])
+        e["defausse"] = ["5D-1", "2S-2"]
+        e, _ = rami.appliquer(e, 0, {"action": "prendre_defausse"})
+        self.assertIn("rendre_defausse", ids(rami.actions_permises(e, 0)))
+        avant = len(e["mains"][0])
+        e, message = rami.appliquer(e, 0, {"action": "rendre_defausse"})
+        self.assertEqual(message, "Tu reposes le 2♠ sur la défausse.")
+        self.assertEqual((e["phase"], e["prise"], e["defausse"]), ("piocher", None, ["5D-1", "2S-2"]))
+        self.assertEqual(len(e["mains"][0]), avant - 1)
+        self.assertEqual(ids(rami.actions_permises(e, 0)), ["piocher"])
+        valider_vue(rami.vue(e, 0))
+        with self.assertRaisesMessage(CoupRefuse, "Action impossible maintenant."):
+            rami.appliquer(e, 0, {"action": "prendre_defausse"})
+        # Le tour suivant, la défausse peut de nouveau être prise.
+        e, _ = rami.appliquer(e, 0, {"action": "piocher"})
+        self.assertNotIn("rendre_defausse", ids(rami.actions_permises(e, 0)))
+        e, _ = rami.appliquer(e, 0, {"action": "defausser", "cartes": [e["mains"][0][0]]})
+        self.assertEqual(ids(rami.actions_permises(e, 1)), ["piocher", "prendre_defausse"])
+
+    def test_rendre_defausse_annule_le_brouillon(self):
+        rami = Rami()
+        e = partie(defausse_a_poser=True)
+        retirer_ailleurs(e, SUITE + ["3D-1"])
+        e["mains"][0] = ["7H-1", "8H-1", "3D-1"]
+        e["defausse"] = ["9H-1"]
+        e, _ = rami.appliquer(e, 0, {"action": "prendre_defausse"})
+        e, _ = rami.appliquer(e, 0, {"action": "poser", "cartes": SUITE})
+        self.assertIn("rendre_defausse", ids(rami.actions_permises(e, 0)))
+        e, _ = rami.appliquer(e, 0, {"action": "rendre_defausse"})
+        self.assertEqual(e["brouillon"], [])
+        self.assertEqual(sorted(e["mains"][0]), ["3D-1", "7H-1", "8H-1"])
+        self.assertEqual(e["defausse"], ["9H-1"])
+
+    def test_rendre_defausse_seulement_avec_l_option(self):
+        rami = Rami()
+        e = partie()
+        e, _ = rami.appliquer(e, 0, {"action": "prendre_defausse"})
+        self.assertNotIn("rendre_defausse", ids(rami.actions_permises(e, 0)))
 
     def test_prendre_defausse_vide_impossible(self):
         e = partie()

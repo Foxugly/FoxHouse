@@ -1,15 +1,30 @@
 import json
-import re
 
 from django.test import SimpleTestCase
 
 from rami.jeu import Rami
-from rami.tests.test_jeu import BRELAN, SUITE, etat_jouer, etat_ouvert, partie
+from rami.tests.test_jeu import BRELAN, SUITE, etat_jouer, etat_ouvert, partie, retirer_ailleurs
 from rami.vue import vue
 from tapis.vue import valider_vue
 
 
-_RE_CHAINE = re.compile(r'"([^"\\]*)"')
+def chaines(v):
+    """Toutes les chaînes (clés et valeurs) de la vue telle qu'envoyée en JSON."""
+    trouvees = set()
+
+    def parcourir(x):
+        if isinstance(x, str):
+            trouvees.add(x)
+        elif isinstance(x, dict):
+            for cle, valeur in x.items():
+                trouvees.add(cle)
+                parcourir(valeur)
+        elif isinstance(x, list):
+            for valeur in x:
+                parcourir(valeur)
+
+    parcourir(json.loads(json.dumps(v)))
+    return trouvees
 
 
 def zone(v, zid):
@@ -104,6 +119,7 @@ class VueTests(SimpleTestCase):
         rami = Rami()
         e = etat_ouvert(["2S-2", "5S-1"])
         e["ouvert"][0] = False
+        retirer_ailleurs(e, BRELAN)
         e["mains"][0] += BRELAN
         e, _ = rami.appliquer(e, 0, {"action": "poser", "cartes": BRELAN})
         groupes = zone(vue(e, 0), "table")["groupes"]
@@ -118,6 +134,11 @@ class VueTests(SimpleTestCase):
         v1 = vue(e, 1)
         self.assertEqual([g["id"] for g in zone(v1, "table")["groupes"]], ["g1", "g2"])
         self.assertNotIn("Points en attente", menu(v1))
+        self.assertEqual(ids_interdits(e, 1) & chaines(v1), set())
+        brouillon_et_main = set(BRELAN) | set(e["mains"][0])
+        self.assertEqual(brouillon_et_main & chaines(v1), set())
+        self.assertEqual(set(BRELAN) - chaines(vue(e, 0)), set())  # témoin
+        self._verifier(e, 1)
 
         e = etat_ouvert(["2S-2", "5S-1"])
         v = vue(e, 0)
@@ -174,8 +195,11 @@ class VueTests(SimpleTestCase):
             self._verifier(e)
             self.assertEqual(len(e["penalites"]), 2)
 
-    def _verifier(self, etat):
-        texte = json.dumps(vue(etat, 0))
-        self.assertNotIn("graine", texte)
-        fuites = ids_interdits(etat, 0) & set(_RE_CHAINE.findall(texte))
-        self.assertEqual(fuites, set(), f"phase {etat['phase']}")
+    def _verifier(self, etat, j=0):
+        v = vue(etat, j)
+        self.assertNotIn("graine", json.dumps(v))
+        vues = chaines(v)
+        self.assertEqual(ids_interdits(etat, j) & vues, set(), f"phase {etat['phase']}")
+        # Témoin : le détecteur voit bien ce qui est montré (sa main, le dessus de la défausse).
+        visibles = set(etat["mains"][j]) | set(etat["defausse"][-1:])
+        self.assertEqual(visibles - vues, set(), "le détecteur ne voit pas les cartes visibles")

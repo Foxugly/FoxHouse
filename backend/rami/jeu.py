@@ -4,6 +4,7 @@ import copy
 
 from rami import manche, poses
 from rami import vue as vue_rami
+from rami.manche import _verbe, etiquette_carte
 from rami.options import OPTIONS
 from tapis.cartes import est_carte
 from tapis.jeu import CoupRefuse, Jeu, normaliser_coup
@@ -39,6 +40,27 @@ def _defausser(etat: dict, j: int, carte: str) -> str:
     if etat["options"]["defausse_a_poser"] and etat["prise"] in main:
         raise CoupRefuse("Pose d'abord la carte prise à la défausse.")
     return manche.defausser(etat, j, carte)
+
+
+def _piocher(etat: dict, j: int) -> str:
+    etat.pop("defausse_rendue", None)  # le tour reprend normalement
+    return manche.piocher(etat, j)
+
+
+def _rendre_defausse(etat: dict, j: int) -> str:
+    """Avec « carte de la défausse à poser » : remet la carte prise et repasse à la pioche.
+
+    Dans ce même tour, la défausse ne peut plus être reprise.
+    """
+    if etat["brouillon"]:
+        poses.annuler(etat, j)
+    prise = etat["prise"]
+    etat["mains"][j].remove(prise)
+    etat["defausse"].append(prise)
+    etat["prise"] = None
+    etat["phase"] = "piocher"
+    etat["defausse_rendue"] = True
+    return f"{_verbe(j, 'reposes', 'repose')} le {etiquette_carte(prise)} sur la défausse."
 
 
 def _manche_suivante(etat: dict) -> str:
@@ -83,7 +105,7 @@ class Rami(Jeu):
 
         match action["id"]:
             case "piocher":
-                message = manche.piocher(etat, joueur)
+                message = _piocher(etat, joueur)
             case "prendre_defausse":
                 message = manche.prendre_defausse(etat, joueur)
             case "poser":
@@ -98,6 +120,8 @@ class Rami(Jeu):
                 message = poses.recuperer(etat, joueur, cartes[0], cible)
             case "defausser":
                 message = _defausser(etat, joueur, cartes[0])
+            case "rendre_defausse":
+                message = _rendre_defausse(etat, joueur)
             case "manche_suivante":
                 message = _manche_suivante(etat)
             case _:
