@@ -39,7 +39,14 @@ partie entière jusqu'au tableau des scores ; un rechargement en cours de partie
 - Les comptes : Renaud : « Pas pour le moment. »
 - L'apparence personnalisable des cartes et du tapis : Renaud : « oui plus tard ».
 - Les autres jeux. L'architecture doit les permettre sans toucher au tapis, mais aucun n'est livré.
-- Le jeu entre humains, le temps réel, les statistiques, le classement public.
+- Le jeu entre humains et le temps réel. **Évolution prévue** (Renaud : « Potentiellement les
+  adversaires pourraient être des humains ») : rien ne doit la fermer. Concrètement, dès la première
+  version, une partie sait **qui occupe chaque siège** (un humain identifié ou la machine) et le
+  serveur fait jouer la machine tant que c'est le tour d'un siège machine ; la vue est toujours
+  calculée pour le siège de celui qui la demande. Le jour venu, il restera à ajouter l'invitation à
+  une table et un canal WebSocket (daphne + Channels, comme Poker et Facilitation) qui pousse cette
+  même vue à chaque joueur.
+- Les statistiques, le classement public.
 
 **Anti-objectifs — ce qui serait un échec même si ça marche**
 - Du code propre au rami dans le tapis Angular (un composant « RamiTable », un `if jeu == 'rami'`).
@@ -187,6 +194,14 @@ supprimées par une commande planifiée (choix de conception).
 - Pour ajouter une carte à une combinaison posée : sélectionner la ou les cartes, puis cliquer sur le
   groupe visé. Pas de glisser-déposer dans la première version (choix de conception).
 - Interface en français ; le texte de la vue (libellés d'actions, menu) vient du serveur.
+- **Dessin des cartes (décidé par Renaud)** : on commence avec le jeu SVG
+  [webisso/playing-cards](https://github.com/webisso/playing-cards) (licence MIT, 54 cartes). Les
+  images sont copiées dans le frontend avec leur licence, jamais chargées depuis GitHub (CSP de la
+  flotte). Il n'a que deux jokers : `JK-1`/`JK-3` noirs, `JK-2`/`JK-4` rouges. Il n'a pas de dos :
+  celui-ci est dessiné par le site. Un seul composant `carte` affiche une carte à partir de son
+  identifiant à travers un **habillage** (dossier d'images + correspondance), pour pouvoir changer
+  de jeu de cartes plus tard sans toucher au tapis. À vérifier sur téléphone : si l'index devient
+  illisible quand les cartes se chevauchent, le site superpose un index plus grand.
 
 ## 6. Le rami 51
 
