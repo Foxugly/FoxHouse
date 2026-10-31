@@ -1,0 +1,111 @@
+"""Le rami 51 branché sur l'interface commune des jeux. N'importe pas Django."""
+
+import copy
+
+from rami import manche, poses
+from rami import vue as vue_rami
+from rami.options import OPTIONS
+from tapis.cartes import est_carte
+from tapis.jeu import CoupRefuse, Jeu, normaliser_coup
+from tapis.options import valider
+
+
+def _exiger_nombre(action: dict, cartes: list[str]) -> None:
+    mini, maxi = action["cartes_min"], action["cartes_max"]
+    if mini <= len(cartes) <= maxi:
+        return
+    if maxi == 0:
+        raise CoupRefuse("Cette action ne prend pas de carte.")
+    if mini == maxi == 1:
+        raise CoupRefuse("Choisis 1 carte.")
+    raise CoupRefuse(f"Choisis de {mini} à {maxi} cartes.")
+
+
+def _exiger_cartes_en_main(etat: dict, j: int, cartes: list[str]) -> None:
+    for c in cartes:
+        if not est_carte(c):
+            raise CoupRefuse("Carte inconnue.")
+        if c not in etat["mains"][j]:
+            raise CoupRefuse("Cette carte n'est pas dans ta main.")
+
+
+def _defausser(etat: dict, j: int, carte: str) -> str:
+    """Se défausser sans avoir validé l'ouverture rend d'abord le brouillon à la main."""
+    if etat["brouillon"]:
+        poses.annuler(etat, j)
+    main = etat["mains"][j]
+    if etat["joker_recupere"] in main:
+        raise CoupRefuse("Utilise d'abord le joker récupéré.")
+    if etat["options"]["defausse_a_poser"] and etat["prise"] in main:
+        raise CoupRefuse("Pose d'abord la carte prise à la défausse.")
+    return manche.defausser(etat, j, carte)
+
+
+def _manche_suivante(etat: dict) -> str:
+    manche.manche_suivante(etat)
+    return f"La manche {etat['manche']} commence."
+
+
+class Rami(Jeu):
+    code = "rami"
+    nom = "Rami 51"
+    min_joueurs = 2
+    max_joueurs = 6
+
+    def options(self):
+        return OPTIONS
+
+    def nouvelle_partie(self, options: dict, nb_joueurs: int, graine: int) -> dict:
+        if not self.min_joueurs <= nb_joueurs <= self.max_joueurs:
+            raise ValueError(f"Nombre de joueurs invalide : {nb_joueurs}")
+        return manche.nouvel_etat(valider(OPTIONS, options), nb_joueurs, graine)
+
+    def joueur_actif(self, etat) -> int | None:
+        return None if etat["phase"] == "terminee" else etat["actif"]
+
+    def actions_permises(self, etat, j: int) -> list[dict]:
+        return vue_rami.actions_permises(etat, j)
+
+    def appliquer(self, etat, joueur: int, coup) -> tuple[dict, str]:
+        coup = normaliser_coup(coup)
+        etat = copy.deepcopy(etat)
+        action = next(
+            (a for a in self.actions_permises(etat, joueur) if a["id"] == coup["action"]), None
+        )
+        if action is None:
+            raise CoupRefuse("Action impossible maintenant.")
+        cartes = coup["cartes"]
+        _exiger_nombre(action, cartes)
+        _exiger_cartes_en_main(etat, joueur, cartes)
+        cible = coup["cible"]
+        if action["cible"] == "groupe" and not any(g["id"] == cible for g in etat["table"]):
+            raise CoupRefuse("Combinaison introuvable.")
+
+        match action["id"]:
+            case "piocher":
+                message = manche.piocher(etat, joueur)
+            case "prendre_defausse":
+                message = manche.prendre_defausse(etat, joueur)
+            case "poser":
+                message = poses.poser(etat, joueur, cartes)
+            case "valider_ouverture":
+                message = poses.valider_ouverture(etat, joueur)
+            case "annuler":
+                message = poses.annuler(etat, joueur)
+            case "ajouter":
+                message = poses.ajouter_a(etat, joueur, cartes, cible)
+            case "recuperer_joker":
+                message = poses.recuperer(etat, joueur, cartes[0], cible)
+            case "defausser":
+                message = _defausser(etat, joueur, cartes[0])
+            case "manche_suivante":
+                message = _manche_suivante(etat)
+            case _:
+                raise CoupRefuse("Action impossible maintenant.")
+        return etat, message
+
+    def vue(self, etat, joueur: int) -> dict:
+        return vue_rami.vue(etat, joueur)
+
+    def adversaire(self, etat, joueur: int) -> dict:
+        raise NotImplementedError("Les adversaires du rami arrivent à la tâche 7.")
