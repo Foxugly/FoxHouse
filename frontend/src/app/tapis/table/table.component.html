@@ -1,0 +1,127 @@
+<div class="feutre" aria-hidden="true"></div>
+
+@for (p of places(); track p.siege.id) {
+  <section
+    class="siege"
+    [class.joueur]="p.joueur"
+    [class.actif]="p.siege.actif"
+    [attr.data-siege]="p.siege.id"
+    [attr.aria-label]="p.siege.nom"
+    [attr.aria-current]="p.siege.actif ? 'true' : null"
+    [style.left.px]="p.x"
+    [style.top.px]="p.y"
+    [style.max-width.px]="p.largeurMax"
+  >
+    <span class="nom">{{ p.siege.nom }}</span>
+    @if (p.siege.compteurs.length) {
+      <span class="compteurs">
+        @for (c of p.siege.compteurs; track $index) {
+          <span>{{ c.libelle }} : {{ c.valeur }}</span>
+        }
+      </span>
+    }
+    <div class="zones-siege">
+      @for (z of p.zones; track z.zone.id) {
+        @if (z.zone.type === 'main') {
+          <app-main
+            [cartes]="z.zone.cartes"
+            [largeurDispo]="z.largeur"
+            [cw]="z.cw"
+            [selectionnable]="selectionnable(p, z.zone)"
+            [selection]="selection()"
+            (basculer)="basculer.emit($event)"
+          />
+        } @else {
+          <div class="zone-siege" [attr.data-zone]="z.zone.id">
+            <span class="libelle">{{ z.zone.libelle }}</span>
+            <app-main [cartes]="z.zone.cartes" [largeurDispo]="z.largeur" [cw]="z.cw" />
+            @if (z.zone.nombre !== null) {
+              <span class="nombre">{{ z.zone.nombre }}</span>
+            }
+          </div>
+        }
+      }
+    </div>
+  </section>
+}
+
+<div class="centre">
+  @for (zone of centre(); track zone.id) {
+    <section class="zone" [class]="'type-' + zone.type" [attr.data-zone]="zone.id">
+      <span class="libelle">{{ zone.libelle }}</span>
+      @switch (zone.type) {
+        @case ('pile') {
+          @if (dessus(zone); as carte) {
+            <app-carte [carte]="carte" [largeur]="cwCentre()" />
+          } @else {
+            <div
+              class="vide"
+              [style.width.px]="cwCentre()"
+              [style.height.px]="cwCentre() * rapportCarte"
+            ></div>
+          }
+        }
+        @case ('combinaisons') {
+          @for (g of zone.groupes; track g.id) {
+            <div
+              class="groupe"
+              [class.en-attente]="g.provisoire"
+              [class.ciblable]="ciblable(g)"
+              [class.cible]="estCible(g)"
+              [attr.data-groupe]="g.id"
+              [attr.role]="ciblable(g) ? 'button' : null"
+              [attr.tabindex]="ciblable(g) ? 0 : null"
+              [attr.aria-pressed]="ciblable(g) ? estCible(g) : null"
+              (click)="cibler(g)"
+              (keydown.enter)="cibler(g)"
+              (keydown.space)="$event.preventDefault(); cibler(g)"
+            >
+              <app-main [cartes]="g.cartes" [largeurDispo]="largeurGroupe(g)" [cw]="cwGroupe()" />
+              @if (g.provisoire) {
+                <span class="mention">en attente</span>
+              }
+            </div>
+          }
+        }
+        @default {
+          @if (zone.cartes.length) {
+            <app-main
+              [cartes]="zone.cartes"
+              [largeurDispo]="largeurLigne(zone)"
+              [cw]="cwCentre()"
+            />
+          }
+        }
+      }
+      @if (zone.nombre !== null) {
+        <span class="nombre">{{ zone.nombre }}</span>
+      }
+    </section>
+  }
+</div>
+
+@if (vue().resultat; as r) {
+  <div class="voile">
+    <section class="resultat" role="dialog" aria-modal="false" aria-labelledby="titre-resultat">
+      <h2 id="titre-resultat">{{ r.titre }}</h2>
+      <table>
+        <thead>
+          <tr>
+            @for (c of r.colonnes; track $index) {
+              <th scope="col">{{ c }}</th>
+            }
+          </tr>
+        </thead>
+        <tbody>
+          @for (ligne of r.lignes; track $index) {
+            <tr>
+              @for (v of ligne; track $index) {
+                <td>{{ v }}</td>
+              }
+            </tr>
+          }
+        </tbody>
+      </table>
+    </section>
+  </div>
+}

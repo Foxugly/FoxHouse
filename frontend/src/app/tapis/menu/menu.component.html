@@ -1,0 +1,24 @@
+@if (vue().menu.length) {
+  <dl class="lignes">
+    @for (ligne of vue().menu; track $index) {
+      <div class="ligne">
+        <dt>{{ ligne.libelle }}</dt>
+        <dd>{{ ligne.valeur ?? '—' }}</dd>
+      </div>
+    }
+  </dl>
+}
+@if (vue().actions.length) {
+  <div class="actions">
+    @for (action of vue().actions; track action.id) {
+      <button
+        type="button"
+        [disabled]="!activable(action)"
+        [attr.title]="contraintes(action) || null"
+        (click)="agir.emit(action)"
+      >
+        {{ action.libelle }}
+      </button>
+    }
+  </div>
+}

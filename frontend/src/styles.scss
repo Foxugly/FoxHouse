@@ -7,6 +7,13 @@
   --carte-dos: #b23a3a;
   --accent: #e0a526;
   --texte: #1f2a24;
+  --feutre-clair: #3b9161;
+  --etiquette: #f3e6b8;
+  --etiquette-texte: #3d3214;
+  --panneau: #ffffff;
+  --trait: #cfd6d1;
+  --attenue: #5b6a63;
+  --bouton: #1f5c47;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -17,6 +24,13 @@
     --carte-dos: #7d2828;
     --accent: #f0b93a;
     --texte: #e8efe9;
+    --feutre-clair: #276843;
+    --etiquette: #e9d89a;
+    --etiquette-texte: #2f2710;
+    --panneau: #19211d;
+    --trait: #2c3833;
+    --attenue: #98a8a0;
+    --bouton: #2f8a69;
   }
 }
 

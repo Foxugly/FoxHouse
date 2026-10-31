@@ -1,0 +1,63 @@
+:host {
+  display: grid;
+  gap: 14px;
+  align-content: start;
+  min-width: 0;
+  padding: 14px;
+  border-radius: 14px;
+  color: var(--texte);
+  background: var(--panneau);
+  border: 1px solid var(--trait);
+}
+
+.lignes {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  font-size: 0.85rem;
+}
+
+.ligne {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+dt {
+  color: var(--attenue);
+}
+
+dd {
+  margin: 0;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+button {
+  min-height: 40px;
+  padding: 7px 12px;
+  font:
+    500 0.85rem system-ui,
+    sans-serif;
+  color: #fff;
+  background: var(--bouton);
+  border: 0;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+button:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
