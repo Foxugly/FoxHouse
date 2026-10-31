@@ -58,6 +58,7 @@ INSTALLED_APPS = [
     "tapis",
     "parties",
     "rami",
+    "huit",
 ]
 
 MIDDLEWARE = [
