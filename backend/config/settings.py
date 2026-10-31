@@ -150,6 +150,8 @@ LOGIN_URL = "/admin/login/"
 CSRF_COOKIE_NAME = "XSRF-TOKEN"
 CSRF_HEADER_NAME = "HTTP_X_XSRF_TOKEN"
 CSRF_COOKIE_HTTPONLY = False
+# Le refus CSRF répond en JSON, comme le reste de l'API.
+CSRF_FAILURE_VIEW = "parties.views.echec_csrf"
 
 
 # Parties anonymes sans activité : effacées après ce délai (RGPD, OPERATIONS.md

@@ -1,0 +1,80 @@
+from django.test import SimpleTestCase
+
+from parties import deroulement
+from parties.tests.jeu_factice import Retourner
+from tapis.jeu import CoupRefuse
+
+HUMAIN_MACHINE = [{"type": "humain", "joueur": "a" * 32}, {"type": "machine"}]
+MACHINE_HUMAIN = [{"type": "machine"}, {"type": "humain", "joueur": "a" * 32}]
+DEUX_HUMAINS = [{"type": "humain", "joueur": "a" * 32}, {"type": "humain", "joueur": "b" * 32}]
+
+
+class SansFin(Retourner):
+    """L'adversaire (siège 1) joue sans jamais rendre la main."""
+
+    def joueur_actif(self, etat):
+        return 1
+
+    def appliquer(self, etat, joueur, coup):
+        return etat, "Encore."
+
+
+class AdversaireTricheur(Retourner):
+    def adversaire(self, etat, joueur):
+        return {"action": "tricher"}
+
+
+class DeroulementTests(SimpleTestCase):
+    def setUp(self):
+        self.jeu = Retourner()
+        self.etat = self.jeu.nouvelle_partie({}, 2, 0)
+
+    def test_jouer_rend_le_coup_humain_puis_celui_de_l_adversaire(self):
+        etat, etapes = deroulement.jouer(
+            self.jeu, self.etat, HUMAIN_MACHINE, 0, {"action": "retourner"}
+        )
+        self.assertEqual(len(etapes), 2)
+        self.assertEqual(etapes[0]["message"], "Le joueur 0 retourne une carte.")
+        self.assertEqual(etapes[1]["message"], "Le joueur 1 retourne une carte.")
+        self.assertEqual(self.jeu.joueur_actif(etat), 0)
+        # Chaque étape est vue depuis le siège humain.
+        self.assertEqual(etapes[1]["vue"]["sieges"][0]["id"], 0)
+        self.assertEqual(etapes[1]["vue"]["actions"][0]["id"], "retourner")
+
+    def test_avancer_s_arrete_sur_un_siege_humain(self):
+        etat, etapes = deroulement.jouer(
+            self.jeu, self.etat, DEUX_HUMAINS, 0, {"action": "retourner"}
+        )
+        self.assertEqual(len(etapes), 1)
+        self.assertEqual(self.jeu.joueur_actif(etat), 1)
+
+    def test_avancer_calcule_les_vues_pour_le_siege_demande(self):
+        etat, etapes = deroulement.avancer(self.jeu, self.etat, MACHINE_HUMAIN, pour=1)
+        self.assertEqual(len(etapes), 1)
+        self.assertEqual(etapes[0]["vue"]["sieges"][0]["id"], 1)
+        self.assertEqual(self.jeu.joueur_actif(etat), 1)
+
+    def test_avancer_sans_machine_a_jouer_ne_fait_rien(self):
+        etat, etapes = deroulement.avancer(self.jeu, self.etat, HUMAIN_MACHINE, pour=0)
+        self.assertEqual(etapes, [])
+        self.assertEqual(etat, self.etat)
+
+    def test_avancer_borne_le_nombre_de_coups(self):
+        with self.assertRaises(RuntimeError):
+            deroulement.avancer(SansFin(), self.etat, HUMAIN_MACHINE, pour=0)
+
+    def test_coup_refuse_de_l_adversaire_est_un_bug(self):
+        with self.assertRaises(RuntimeError) as ctx:
+            deroulement.jouer(
+                AdversaireTricheur(), self.etat, HUMAIN_MACHINE, 0, {"action": "retourner"}
+            )
+        self.assertNotIsInstance(ctx.exception, CoupRefuse)
+
+    def test_pas_ton_tour(self):
+        with self.assertRaisesMessage(CoupRefuse, "Ce n'est pas ton tour."):
+            deroulement.jouer(self.jeu, self.etat, DEUX_HUMAINS, 1, {"action": "retourner"})
+
+    def test_partie_terminee(self):
+        etat = dict(self.etat, coups=6)
+        with self.assertRaisesMessage(CoupRefuse, "La partie est terminée."):
+            deroulement.jouer(self.jeu, etat, HUMAIN_MACHINE, 0, {"action": "retourner"})
