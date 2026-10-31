@@ -16,3 +16,6 @@ staticfiles/
 .vscode/
 *.pem
 *.key
+
+frontend/node_modules/
+frontend/.angular/

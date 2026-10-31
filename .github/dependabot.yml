@@ -28,3 +28,21 @@ updates:
     groups:
       actions:
         patterns: ["*"]
+
+  - package-ecosystem: "npm"
+    directory: "/frontend"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    groups:
+      npm:
+        patterns: ["*"]
+    ignore:
+      # Les majeures d'Angular se décident pour toute la flotte (Dependabot
+      # proposait des outils v22 sur des projets v21, et cassait le build).
+      - dependency-name: "@angular/*"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@angular-devkit/*"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]

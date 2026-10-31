@@ -171,3 +171,31 @@ jobs:
             done < .pip-audit-ignore
           fi
           pip-audit --progress-spinner off -r requirements.txt "${ignore[@]}"
+
+  # Frontend Angular 21 : lint, tests (Vitest) et build de production.
+  frontend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Dépendances
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Tests
+        run: npm test
+
+      - name: Build
+        run: npm run build
