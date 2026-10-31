@@ -66,6 +66,56 @@ class JeuTests(SimpleTestCase):
         e["pli"][1] = [1, "QS-1"]
         self.assertEqual(carte(choisir(e, 2)), ["9S-1"])
 
+    def test_dernier_sans_points_garde_la_dame(self):
+        e = etat_plis([["10S-1"], ["3S-1"], ["QS-1", "5S-1"]])
+        e, _ = jouer(e, 0, "10S-1")
+        e, _ = jouer(e, 1, "3S-1")
+        self.assertEqual(carte(choisir(e, 2)), ["5S-1"])
+        # Sans autre pique, il doit fournir la dame.
+        e["mains"][2] = ["QS-1", "4D-1"]
+        self.assertEqual(carte(choisir(e, 2)), ["QS-1"])
+
+    def test_dame_sous_un_pique_plus_haut(self):
+        e = etat_plis([["KS-1"], ["QS-1", "2S-1"], ["8S-1"], ["7S-1"]])
+        e, _ = jouer(e, 0, "KS-1")
+        self.assertEqual(carte(choisir(e, 1)), ["QS-1"])
+        e["pli"] = [[0, "AS-1"]]
+        self.assertEqual(carte(choisir(e, 1)), ["QS-1"])
+
+    def test_dame_jamais_si_elle_prend(self):
+        e = etat_plis([["3S-1"], ["QS-1", "AS-1"], ["8S-1"], ["7S-1"]])
+        e, _ = jouer(e, 0, "3S-1")
+        self.assertEqual(carte(choisir(e, 1)), ["AS-1"])  # la plus basse serait la dame
+        e = etat_plis([["JS-1"], ["QS-1", "9S-1"], ["8S-1"], ["7S-1"]])
+        e, _ = jouer(e, 0, "JS-1")
+        self.assertEqual(carte(choisir(e, 1)), ["9S-1"])
+
+    def test_valet_de_carreau_pris_par_le_dernier(self):
+        e = etat_plis([["10D-1"], ["3D-1"], ["JD-1", "AD-1", "2D-1"]], valet_carreau=True)
+        e, _ = jouer(e, 0, "10D-1")
+        e, _ = jouer(e, 1, "3D-1")
+        self.assertEqual(carte(choisir(e, 2)), ["JD-1"])
+        # Le valet déjà dans le pli : il le prend avec sa plus haute.
+        e["pli"][1] = [1, "JD-1"]
+        e["mains"][2] = ["AD-1", "2D-1"]
+        self.assertEqual(carte(choisir(e, 2)), ["AD-1"])
+        # Le valet ne remporterait pas : il ne le donne pas.
+        e = etat_plis([["KD-1"], ["3D-1"], ["JD-1", "4D-1"]], valet_carreau=True)
+        e, _ = jouer(e, 0, "KD-1")
+        e, _ = jouer(e, 1, "3D-1")
+        self.assertEqual(carte(choisir(e, 2)), ["4D-1"])
+
+    def test_valet_de_carreau_jamais_donne(self):
+        e = etat_plis([["QD-1"], ["JD-1", "3D-1"], ["8D-1"], ["7D-1"]], valet_carreau=True)
+        e, _ = jouer(e, 0, "QD-1")
+        self.assertEqual(carte(choisir(e, 1)), ["3D-1"])
+        e = etat_plis([["QC-1"], ["JD-1", "5S-1"], ["8C-1"], ["7C-1"]], valet_carreau=True)
+        e, _ = jouer(e, 0, "QC-1")
+        self.assertEqual(carte(choisir(e, 1)), ["5S-1"])
+        # Sans l'option, le valet n'est qu'une carte.
+        e["options"]["valet_carreau"] = False
+        self.assertEqual(carte(choisir(e, 1)), ["JD-1"])
+
     def test_defausse(self):
         e = etat_plis([["10C-1"], ["QS-1", "AH-1", "KD-1"], ["8C-1"]])
         e, _ = jouer(e, 0, "10C-1")

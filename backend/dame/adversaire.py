@@ -8,6 +8,7 @@ from dame.manche import (
     DAME_PIQUE,
     NB_DONNEES,
     ORDRE_COULEURS,
+    VALET_CARREAU,
     cartes_jouables,
     gagnant_du_pli,
     points_des_cartes,
@@ -50,18 +51,42 @@ def choisir_carte(etat: dict, j: int) -> str:
     if not pli:
         hors_coeur = [c for c in jouables if enseigne(c) != "H"]
         return _plus_basse(hors_coeur or jouables)
+    valet = VALET_CARREAU if etat["options"]["valet_carreau"] else None
     demandee = enseigne(pli[0][1])
     if enseigne(jouables[0]) == demandee:  # il fournit : toutes ses jouables sont de la couleur
-        dernier = len(pli) == etat["nb"] - 1
-        if dernier and points_des_cartes([c for _, c in pli], etat["options"]) <= 0:
-            return _plus_haute(jouables)
-        maitresse = next(c for s, c in pli if s == gagnant_du_pli(pli))
-        dessous = [c for c in jouables if rang(c) < rang(maitresse)]
-        return _plus_haute(dessous) if dessous else _plus_basse(jouables)
+        return _fournir(etat, jouables, valet)
     if DAME_PIQUE in jouables:
         return DAME_PIQUE
     coeurs = [c for c in jouables if enseigne(c) == "H"]
-    return _plus_haute(coeurs or jouables)
+    return _plus_haute(coeurs or _sauf(jouables, valet))
+
+
+def _sauf(cartes: list[str], *exclues) -> list[str]:
+    """Les cartes sans les exclues ; toutes si rien d'autre ne reste."""
+    return [c for c in cartes if c not in exclues] or cartes
+
+
+def _fournir(etat: dict, jouables: list[str], valet: str | None) -> str:
+    """Sous la couleur demandée.
+
+    La dame de pique n'est jouée que si une carte plus haute (R♠ ou A♠) est déjà dans le pli,
+    ou s'il ne reste qu'elle. Le valet de carreau (avec l'option) n'est jamais donné à un
+    autre s'il y a autre chose ; il est pris, dernier du pli, s'il le remporte.
+    """
+    pli = etat["pli"]
+    maitresse = next(c for s, c in pli if s == gagnant_du_pli(pli))
+    dame_prend = DAME_PIQUE in jouables and rang(DAME_PIQUE) > rang(maitresse)
+    sures = _sauf(jouables, DAME_PIQUE) if dame_prend else jouables
+    dernier = len(pli) == etat["nb"] - 1
+    if dernier and points_des_cartes([c for _, c in pli], etat["options"]) <= 0:
+        if valet in sures and rang(valet) > rang(maitresse):
+            return valet
+        haute = _plus_haute(sures)
+        if haute == valet and rang(valet) < rang(maitresse):
+            return _plus_haute(_sauf(sures, valet))
+        return haute
+    dessous = _sauf([c for c in sures if rang(c) < rang(maitresse)], valet)
+    return _plus_haute(dessous) if dessous else _plus_basse(sures)
 
 
 def choisir(etat: dict, j: int) -> dict:
