@@ -29,10 +29,10 @@ def actions_permises(etat: dict, j: int) -> list[dict]:
         return actions
     if phase == "fin_manche":
         return [_action("manche_suivante", "Manche suivante", 0, 0)]
-    actions = [
-        _action("poser", "Poser la combinaison", 3, 13),
-        _action("defausser", "Défausser", 1, 1),
-    ]
+    joker_en_attente = etat["joker_recupere"] in etat["mains"][j]  # à rejouer avant de défausser
+    actions = [_action("poser", "Poser la combinaison", 3, 13)]
+    if not joker_en_attente:
+        actions.append(_action("defausser", "Défausser", 1, 1))
     if not etat["ouvert"][j]:
         if etat["brouillon"]:
             actions.append(_action("valider_ouverture", "Valider l'ouverture", 0, 0))
@@ -41,7 +41,7 @@ def actions_permises(etat: dict, j: int) -> list[dict]:
         actions.append(_action("ajouter", "Ajouter à la combinaison", 1, 12, "groupe"))
         if etat["options"]["recuperation_joker"] == "apres_ouverture":
             actions.append(_action("recuperer_joker", "Récupérer le joker", 1, 1, "groupe"))
-    if etat["options"]["defausse_a_poser"] and _prise_non_posee(etat, j):
+    if etat["options"]["defausse_a_poser"] and not joker_en_attente and _prise_non_posee(etat, j):
         actions.append(_action("rendre_defausse", "Reposer la carte prise", 0, 0))
     return actions
 
