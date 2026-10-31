@@ -1,0 +1,344 @@
+{
+  "schema": 1,
+  "jeu": "rami",
+  "version": 28,
+  "terminee": true,
+  "sieges": [
+    {
+      "id": 0,
+      "nom": "Toi",
+      "actif": false,
+      "compteurs": [
+        {
+          "libelle": "Cartes",
+          "valeur": 13
+        },
+        {
+          "libelle": "Pénalités",
+          "valeur": 108
+        }
+      ]
+    },
+    {
+      "id": 1,
+      "nom": "Ordinateur 1",
+      "actif": false,
+      "compteurs": [
+        {
+          "libelle": "Cartes",
+          "valeur": 13
+        },
+        {
+          "libelle": "Pénalités",
+          "valeur": 78
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "nom": "Ordinateur 2",
+      "actif": false,
+      "compteurs": [
+        {
+          "libelle": "Cartes",
+          "valeur": 0
+        },
+        {
+          "libelle": "Pénalités",
+          "valeur": 0
+        }
+      ]
+    }
+  ],
+  "zones": [
+    {
+      "id": "main-0",
+      "type": "main",
+      "siege": 0,
+      "libelle": "Ta main",
+      "cartes": [
+        {
+          "id": "6S-1",
+          "valeur": "6",
+          "enseigne": "S"
+        },
+        {
+          "id": "KC-2",
+          "valeur": "K",
+          "enseigne": "C"
+        },
+        {
+          "id": "QD-2",
+          "valeur": "Q",
+          "enseigne": "D"
+        },
+        {
+          "id": "9D-2",
+          "valeur": "9",
+          "enseigne": "D"
+        },
+        {
+          "id": "9C-1",
+          "valeur": "9",
+          "enseigne": "C"
+        },
+        {
+          "id": "10S-2",
+          "valeur": "10",
+          "enseigne": "S"
+        },
+        {
+          "id": "6D-1",
+          "valeur": "6",
+          "enseigne": "D"
+        },
+        {
+          "id": "10S-1",
+          "valeur": "10",
+          "enseigne": "S"
+        },
+        {
+          "id": "5S-2",
+          "valeur": "5",
+          "enseigne": "S"
+        },
+        {
+          "id": "KH-1",
+          "valeur": "K",
+          "enseigne": "H"
+        },
+        {
+          "id": "8C-2",
+          "valeur": "8",
+          "enseigne": "C"
+        },
+        {
+          "id": "6H-2",
+          "valeur": "6",
+          "enseigne": "H"
+        },
+        {
+          "id": "9H-2",
+          "valeur": "9",
+          "enseigne": "H"
+        }
+      ],
+      "nombre": null,
+      "groupes": []
+    },
+    {
+      "id": "main-1",
+      "type": "main",
+      "siege": 1,
+      "libelle": "Ordinateur 1",
+      "cartes": [
+        {
+          "cachee": true
+        },
+        {
+          "cachee": true
+        },
+        {
+          "cachee": true
+        },
+        {
+          "cachee": true
+        },
+        {
+          "cachee": true
+        },
+        {
+          "cachee": true
+        },
+        {
+          "cachee": true
+        },
+        {
+          "cachee": true
+        },
+        {
+          "cachee": true
+        },
+        {
+          "cachee": true
+        },
+        {
+          "cachee": true
+        },
+        {
+          "cachee": true
+        },
+        {
+          "cachee": true
+        }
+      ],
+      "nombre": null,
+      "groupes": []
+    },
+    {
+      "id": "main-2",
+      "type": "main",
+      "siege": 2,
+      "libelle": "Ordinateur 2",
+      "cartes": [],
+      "nombre": null,
+      "groupes": []
+    },
+    {
+      "id": "pioche",
+      "type": "pile",
+      "siege": null,
+      "libelle": "Pioche",
+      "cartes": [],
+      "nombre": 27,
+      "groupes": []
+    },
+    {
+      "id": "defausse",
+      "type": "pile",
+      "siege": null,
+      "libelle": "Défausse",
+      "cartes": [
+        {
+          "id": "3H-2",
+          "valeur": "3",
+          "enseigne": "H"
+        }
+      ],
+      "nombre": 42,
+      "groupes": []
+    },
+    {
+      "id": "table",
+      "type": "combinaisons",
+      "siege": null,
+      "libelle": "Table",
+      "cartes": [],
+      "nombre": null,
+      "groupes": [
+        {
+          "id": "g1",
+          "cartes": [
+            {
+              "id": "JS-1",
+              "valeur": "J",
+              "enseigne": "S"
+            },
+            {
+              "id": "QS-1",
+              "valeur": "Q",
+              "enseigne": "S"
+            },
+            {
+              "id": "KS-1",
+              "valeur": "K",
+              "enseigne": "S"
+            },
+            {
+              "id": "AS-1",
+              "valeur": "A",
+              "enseigne": "S"
+            }
+          ],
+          "provisoire": false,
+          "ciblable": false
+        },
+        {
+          "id": "g2",
+          "cartes": [
+            {
+              "id": "4S-2",
+              "valeur": "4",
+              "enseigne": "S"
+            },
+            {
+              "id": "5S-1",
+              "valeur": "5",
+              "enseigne": "S"
+            },
+            {
+              "id": "6S-2",
+              "valeur": "6",
+              "enseigne": "S"
+            },
+            {
+              "id": "7S-1",
+              "valeur": "7",
+              "enseigne": "S"
+            },
+            {
+              "id": "8S-1",
+              "valeur": "8",
+              "enseigne": "S"
+            },
+            {
+              "id": "9S-1",
+              "valeur": "9",
+              "enseigne": "S"
+            }
+          ],
+          "provisoire": false,
+          "ciblable": false
+        },
+        {
+          "id": "g3",
+          "cartes": [
+            {
+              "id": "2S-1",
+              "valeur": "2",
+              "enseigne": "S"
+            },
+            {
+              "id": "2H-2",
+              "valeur": "2",
+              "enseigne": "H"
+            },
+            {
+              "id": "2C-1",
+              "valeur": "2",
+              "enseigne": "C"
+            }
+          ],
+          "provisoire": false,
+          "ciblable": false
+        }
+      ]
+    }
+  ],
+  "menu": [
+    {
+      "libelle": "Manche",
+      "valeur": "1 / 1"
+    },
+    {
+      "libelle": "Ouverture",
+      "valeur": "pas encore"
+    }
+  ],
+  "actions": [],
+  "resultat": {
+    "titre": "Fin de la partie — Ordinateur 2 gagne",
+    "colonnes": [
+      "Joueur",
+      "Manche 1",
+      "Total"
+    ],
+    "lignes": [
+      [
+        "Toi",
+        108,
+        108
+      ],
+      [
+        "Ordinateur 1",
+        78,
+        78
+      ],
+      [
+        "Ordinateur 2",
+        0,
+        0
+      ]
+    ]
+  }
+}
