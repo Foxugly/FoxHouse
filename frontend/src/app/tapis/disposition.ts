@@ -5,7 +5,7 @@ export interface Point {
 
 export interface PasCartes {
   pas: number;
-  rangees: 1 | 2;
+  rangees: number;
   parRangee: number;
 }
 
@@ -26,16 +26,26 @@ export function largeurCarte(largeur: number, hauteur: number): number {
   return Math.max(34, Math.min(62, Math.min(largeur, hauteur * 1.4) / 15));
 }
 
-/** Pas entre les cartes d'une main : 1,08·cw au plus, 0,42·cw au moins, sinon deux rangées. */
+/**
+ * Pas entre les cartes d'une main : 1,08·cw au plus, 0,42·cw au moins sur une rangée. Sinon, le
+ * moins de rangées possible avec un pas d'au moins 0,8 × 0,42·cw : deux cartes d'une même rangée
+ * ne sont jamais au même endroit, le coin de chacune reste visible, et la rangée tient dans
+ * `largeurDispo` (dès qu'elle vaut au moins `cw`).
+ */
 export function pasCartes(nb: number, cw: number, largeurDispo: number): PasCartes {
   if (nb <= 1) return { pas: 0, rangees: 1, parRangee: nb };
   const pasMax = 1.08 * cw;
   const pasMin = 0.42 * cw;
-  const pasUneRangee = Math.min(pasMax, (largeurDispo - cw) / (nb - 1));
+  const libre = largeurDispo - cw;
+  const pasUneRangee = Math.min(pasMax, libre / (nb - 1));
   if (pasUneRangee >= pasMin) return { pas: pasUneRangee, rangees: 1, parRangee: nb };
-  const parRangee = Math.ceil(nb / 2);
-  const pas = Math.max(pasMin * 0.8, Math.min(pasMax, (largeurDispo - cw) / (parRangee - 1)));
-  return { pas, rangees: 2, parRangee };
+  for (let rangees = 2; rangees < nb; rangees++) {
+    const parRangee = Math.ceil(nb / rangees);
+    if (parRangee === 1) break;
+    const pas = Math.min(pasMax, libre / (parRangee - 1));
+    if (pas >= pasMin * 0.8) return { pas, rangees: Math.ceil(nb / parRangee), parRangee };
+  }
+  return { pas: 0, rangees: nb, parRangee: 1 };
 }
 
 /** Les cartes très chevauchées affichent un index lisible par-dessus. */
@@ -58,11 +68,18 @@ const LARGEUR_CENTRE_MIN = 160;
 
 /**
  * Le cadre des zones du centre, qui ne touche aucun siège. Sur une table large, c'est la bande du
- * milieu, raccourcie par les sièges du haut et du bas, rétrécie par ceux des côtés. Sur une table étroite, où les sièges des côtés
- * laisseraient trop peu de place, le centre prend presque toute la largeur dans le plus grand
- * espace vertical libre entre les sièges.
+ * milieu, raccourcie par les sièges du haut et du bas, rétrécie par ceux des côtés. Quand les
+ * sièges y laissent trop peu de place (en largeur, ou moins de `hauteurMin` en hauteur), le centre
+ * prend presque toute la largeur dans le plus grand espace vertical libre entre les sièges. Il
+ * garde au moins `hauteurMin` (une rangée de cartes) : si aucun espace libre n'est assez haut, il
+ * déborde sur les sièges, centré sur le plus grand espace et gardé dans la table.
  */
-export function placerCentre(sieges: Cadre[], largeur: number, hauteur: number): Cadre {
+export function placerCentre(
+  sieges: Cadre[],
+  largeur: number,
+  hauteur: number,
+  hauteurMin = 0,
+): Cadre {
   const bande: Cadre = {
     gauche: 0.22 * largeur,
     droite: 0.78 * largeur,
@@ -82,14 +99,15 @@ export function placerCentre(sieges: Cadre[], largeur: number, hauteur: number):
       bande.droite = Math.min(bande.droite, s.gauche - ECART_CENTRE);
     }
   }
-  if (bande.droite - bande.gauche >= Math.max(LARGEUR_CENTRE_MIN, 0.4 * largeur)) return bande;
+  const largeOk = bande.droite - bande.gauche >= Math.max(LARGEUR_CENTRE_MIN, 0.4 * largeur);
+  if (largeOk && bande.bas - bande.haut >= hauteurMin) return bande;
 
   const gauche = 0.1 * largeur;
   const droite = 0.9 * largeur;
   const obstacles = sieges
     .filter((s) => s.droite > gauche && s.gauche < droite)
     .sort((a, b) => a.haut - b.haut);
-  let meilleur = { haut: 0, bas: 0 };
+  let meilleur = { haut: hauteur / 2, bas: hauteur / 2 };
   const essayer = (haut: number, bas: number) => {
     if (bas - haut > meilleur.bas - meilleur.haut) meilleur = { haut, bas };
   };
@@ -99,5 +117,11 @@ export function placerCentre(sieges: Cadre[], largeur: number, hauteur: number):
     curseur = Math.max(curseur, o.bas + ECART_CENTRE);
   }
   essayer(curseur, 0.92 * hauteur);
+  const plancher = Math.min(hauteurMin, hauteur);
+  const manque = plancher - (meilleur.bas - meilleur.haut);
+  if (manque > 0) {
+    const haut = Math.max(0, Math.min(meilleur.haut - manque / 2, hauteur - plancher));
+    meilleur = { haut, bas: haut + plancher };
+  }
   return { gauche, droite, ...meilleur };
 }

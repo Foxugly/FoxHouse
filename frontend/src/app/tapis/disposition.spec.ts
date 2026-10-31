@@ -55,6 +55,21 @@ describe('pasCartes', () => {
     expect(r.pas).toBeGreaterThanOrEqual(0.42 * 40 * 0.8);
   });
 
+  it('ajoute des rangées quand deux ne suffisent pas, sans jamais sortir de la largeur', () => {
+    for (const [nb, dispo] of [
+      [14, 100],
+      [22, 100],
+      [22, 60],
+    ]) {
+      const cw = 34;
+      const r = pasCartes(nb, cw, dispo);
+      expect(r.rangees).toBeGreaterThan(2);
+      expect(r.rangees).toBe(Math.ceil(nb / r.parRangee));
+      expect(r.pas).toBeGreaterThanOrEqual(0.42 * cw * 0.8);
+      expect(cw + (r.parRangee - 1) * r.pas).toBeLessThanOrEqual(dispo + 1e-9);
+    }
+  });
+
   it('gère zéro ou une carte', () => {
     expect(pasCartes(0, 50, 600)).toEqual({ pas: 0, rangees: 1, parRangee: 0 });
     expect(pasCartes(1, 50, 600)).toEqual({ pas: 0, rangees: 1, parRangee: 1 });
@@ -101,5 +116,19 @@ describe('placerCentre', () => {
     const haut: Cadre = { gauche: 400, droite: 600, haut: 20, bas: 200 };
     const c = placerCentre([haut], 1000, 600);
     expect(c.haut).toBeGreaterThan(200);
+  });
+
+  it('sur une table étroite pleine de sièges, garde au moins une rangée de cartes en hauteur', () => {
+    // 10 sièges serrés qui ne laissent aucun espace vertical libre.
+    const sieges: Cadre[] = Array.from({ length: 10 }, (_, i) => ({
+      gauche: 0,
+      droite: 328,
+      haut: i * 52,
+      bas: i * 52 + 60,
+    }));
+    const c = placerCentre(sieges, 328, 520, 90);
+    expect(c.bas - c.haut).toBeCloseTo(90);
+    expect(c.haut).toBeGreaterThanOrEqual(0);
+    expect(c.bas).toBeLessThanOrEqual(520);
   });
 });

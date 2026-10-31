@@ -32,10 +32,10 @@ export class MainComponent {
     pasCartes(this.cartes().length, this.cw(), this.largeurDispo()),
   );
 
-  /** Deux rangées : la main est serrée, l'index des cartes doit rester lisible. */
+  /** Plusieurs rangées : la main est serrée, l'index des cartes doit rester lisible. */
   protected readonly renforce = computed(() => {
     const { pas, rangees } = this.disposition();
-    return rangees === 2 || indexRenforce(pas, this.cw());
+    return rangees > 1 || indexRenforce(pas, this.cw());
   });
 
   protected readonly hauteur = computed(
@@ -58,7 +58,8 @@ export class MainComponent {
       return {
         carte,
         id: 'id' in carte ? carte.id : null,
-        gauche: Math.min(decalage + colonne * pas, Math.max(0, largeur - cw)),
+        // `pasCartes` garantit que la rangée tient : deux cartes ne partagent jamais un x.
+        gauche: decalage + colonne * pas,
         haut: MARGE_HAUT + rangee * cw * ECART_RANGEES,
         z: i + 1,
       };

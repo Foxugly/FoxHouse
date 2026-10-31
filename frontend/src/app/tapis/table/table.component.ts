@@ -71,8 +71,33 @@ const HAUTEUR_HORS_CARTES = 16 + 44;
 const MARGE_VOISIN = 8;
 /** Largeur supposée du nom et des compteurs d'un siège. */
 const LARGEUR_ETIQUETTES = 100;
+/** Marges verticales autour d'une rangée de cartes au centre : haut du cadre, bords de la zone. */
+const MARGES_ZONE_CENTRE = 10 + 16 + 8;
 /** Espace entre deux zones d'un même siège, marge de la carte soulevée comprise. */
 const ECART_ZONES = 20;
+
+/** Largeur d'un caractère des compteurs (0,68 rem, chasse fixe), écart et hauteur d'une ligne. */
+const CHASSE_COMPTEUR = 6.6;
+const ECART_COMPTEURS = 8;
+const LIGNE_COMPTEURS = 14;
+/** Épaisseur du bord en bois de la table, que le siège du joueur ne recouvre pas. */
+const BORD_TABLE = 14;
+
+/** Lignes en plus de la première quand les compteurs d'un siège passent à la ligne. */
+function lignesCompteursEnPlus(siege: Siege, largeur: number): number {
+  let lignes = 1;
+  let ligne = 0;
+  for (const c of siege.compteurs) {
+    const l = `${c.libelle} : ${c.valeur}`.length * CHASSE_COMPTEUR;
+    if (ligne > 0 && ligne + ECART_COMPTEURS + l > largeur) {
+      lignes++;
+      ligne = l;
+    } else {
+      ligne += (ligne > 0 ? ECART_COMPTEURS : 0) + l;
+    }
+  }
+  return lignes - 1;
+}
 
 /** Le rectangle qu'occupe un siège sur la table, estimé sans mesurer le rendu. */
 function cadreSiege(place: PlaceSiege): Cadre {
@@ -86,6 +111,7 @@ function cadreSiege(place: PlaceSiege): Cadre {
   });
   const hauteur =
     HAUTEUR_HORS_CARTES +
+    lignesCompteursEnPlus(place.siege, largeur) * LIGNE_COMPTEURS +
     cartes.reduce((a, b) => a + b, 0) +
     Math.max(0, cartes.length - 1) * ECART_ZONES;
   return {
@@ -94,6 +120,11 @@ function cadreSiege(place: PlaceSiege): Cadre {
     haut: place.y - hauteur / 2,
     bas: place.y + hauteur / 2,
   };
+}
+
+/** Demi-hauteur estimée d'un siège dont la main de largeur `cw` tient sur `rangees` rangées. */
+function demiHauteurSiege(cw: number, rangees: number): number {
+  return (HAUTEUR_HORS_CARTES + cw * (RAPPORT_CARTE + (rangees - 1) * 0.7)) / 2;
 }
 
 /**
@@ -110,16 +141,50 @@ function largeurEntreVoisins(
   if (n < 2) return Infinity;
   const joueur = positions[0];
   // Majorant : la main du joueur sur deux rangées.
-  const demiHauteurJoueur = (HAUTEUR_HORS_CARTES + cw * (RAPPORT_CARTE + 0.7)) / 2;
-  const demiHauteurVoisin = (HAUTEUR_HORS_CARTES + cwAutres * RAPPORT_CARTE) / 2;
+  const ecart = demiHauteurSiege(cw, 2) + demiHauteurSiege(cwAutres, 1);
   let demiLargeur = Infinity;
   for (const i of new Set([1, n - 1])) {
     const voisin = positions[i];
-    if (Math.abs(voisin.y - joueur.y) >= demiHauteurJoueur + demiHauteurVoisin) continue;
+    if (Math.abs(voisin.y - joueur.y) >= ecart) continue;
     const libre = Math.abs(voisin.x - joueur.x) - largeursMains[i] / 2 - MARGE_VOISIN;
     demiLargeur = Math.min(demiLargeur, libre);
   }
   return 2 * demiLargeur;
+}
+
+/**
+ * Largeur sous laquelle la main du joueur n'est plus utilisable : ses cartes sur deux rangées au
+ * pas minimal de `pasCartes`.
+ */
+function largeurMainUtile(nb: number, cw: number): number {
+  return cw * (1 + 0.42 * Math.max(0, Math.ceil(nb / 2) - 1));
+}
+
+/**
+ * Sur une table étroite, les voisins du joueur (sièges 1 et n−1) remontent au-dessus de sa main
+ * plutôt que de la rétrécir. Ils ne remontent pas plus haut que le siège suivant ne le permet :
+ * au-delà, la main du joueur passe devant eux.
+ */
+function remonterVoisins(
+  positions: Point[],
+  largeursMains: number[],
+  largeurJoueur: number,
+  demiHauteurJoueur: number,
+  cwAutres: number,
+): void {
+  const n = positions.length;
+  const joueur = positions[0];
+  const demiVoisin = demiHauteurSiege(cwAutres, 1);
+  for (const i of new Set([1, n - 1])) {
+    if (i === 0) continue;
+    const voisin = positions[i];
+    const ecartX = Math.abs(voisin.x - joueur.x);
+    if (ecartX >= largeurJoueur / 2 + largeursMains[i] / 2 + MARGE_VOISIN) continue;
+    const cible = joueur.y - demiHauteurJoueur - demiVoisin - MARGE_VOISIN;
+    const suivant = n > 3 ? positions[i === 1 ? 2 : n - 2] : null;
+    const limite = Math.max(demiVoisin, suivant ? suivant.y + 2 * demiVoisin + MARGE_VOISIN : 0);
+    positions[i] = { x: voisin.x, y: Math.min(voisin.y, Math.max(cible, limite)) };
+  }
 }
 
 @Component({
@@ -154,16 +219,32 @@ export class TableComponent {
     const cw = this.cw();
     const cwAutres = cw * ECHELLE_AUTRES;
     const n = sieges.length;
+    // Le siège du joueur remonte vers le centre, et assez pour ne pas déborder sur le bord.
+    const basJoueur = h - BORD_TABLE - demiHauteurSiege(cw, 2);
     const positions = positionsSieges(n, l, h).map((p, i) =>
-      i === 0 ? { x: p.x, y: h / 2 + (p.y - h / 2) * REMONTEE_JOUEUR } : p,
+      i === 0 ? { x: p.x, y: Math.min(basJoueur, h / 2 + (p.y - h / 2) * REMONTEE_JOUEUR) } : p,
     );
     const largeursMains = positions.map(({ x }) =>
       Math.max(cwAutres, Math.min(l / (n * 0.55), 150, 2 * Math.min(x, l - x))),
     );
-    largeursMains[0] = Math.max(
-      cw,
-      Math.min(0.7 * l, l - 40, largeurEntreVoisins(positions, largeursMains, cw, cwAutres)),
-    );
+    const largeurPleine = Math.min(0.7 * l, l - 40);
+    const nbJoueur = zones.find((z) => z.siege === sieges[0]?.id && z.type === 'main')?.cartes
+      .length;
+    const libre = largeurEntreVoisins(positions, largeursMains, cw, cwAutres);
+    if (libre >= Math.min(largeurPleine, largeurMainUtile(nbJoueur ?? 0, cw))) {
+      largeursMains[0] = Math.max(cw, Math.min(largeurPleine, libre));
+    } else {
+      // Trop étroit entre les voisins : la main garde sa largeur, les voisins remontent.
+      largeursMains[0] = Math.max(cw, largeurPleine);
+      const { rangees } = pasCartes(nbJoueur ?? 0, cw, largeursMains[0]);
+      remonterVoisins(
+        positions,
+        largeursMains,
+        largeursMains[0],
+        demiHauteurSiege(cw, rangees),
+        cwAutres,
+      );
+    }
     return sieges.map((siege, i) => {
       const joueur = i === 0;
       const { x, y } = positions[i];
@@ -194,9 +275,14 @@ export class TableComponent {
 
   protected readonly centre = computed(() => this.vue().zones.filter((z) => z.siege === null));
 
-  /** Le cadre des zones du centre, à l'écart des sièges. */
+  /** Le cadre des zones du centre, à l'écart des sièges, haut d'une rangée de cartes au moins. */
   protected readonly cadreCentre = computed(() =>
-    placerCentre(this.places().map(cadreSiege), this.largeur(), this.hauteur()),
+    placerCentre(
+      this.places().map(cadreSiege),
+      this.largeur(),
+      this.hauteur(),
+      this.cwCentre() * RAPPORT_CARTE + MARGES_ZONE_CENTRE,
+    ),
   );
 
   constructor() {
@@ -241,7 +327,7 @@ export class TableComponent {
   }
 
   protected ciblable(groupe: Groupe): boolean {
-    return groupe.ciblable && !groupe.provisoire;
+    return groupe.ciblable;
   }
 
   protected estCible(groupe: Groupe): boolean {

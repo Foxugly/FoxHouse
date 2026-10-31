@@ -56,8 +56,18 @@ describe('CarteComponent', () => {
     const carte = { id: '10H-2', valeur: '10', enseigne: 'H' };
     expect(texte(monter(carte), '.index')).toBeUndefined();
     const f = monter(carte, { indexRenforce: true });
-    expect(texte(f, '.index')).toBe('10♥');
     expect(racine(f).querySelector('.index.rouge')).not.toBeNull();
+  });
+
+  it("l'index empile la valeur sur l'enseigne, dans deux éléments", () => {
+    const f = monter({ id: 'QS-1', valeur: 'Q', enseigne: 'S' }, { indexRenforce: true });
+    const index = racine(f).querySelector('.index')!;
+    const enfants = Array.from(index.children).map((el) => [el.className, el.textContent?.trim()]);
+    expect(enfants).toEqual([
+      ['valeur', 'D'],
+      ['enseigne', '♠'],
+    ]);
+    expect(index.getAttribute('aria-hidden')).toBe('true');
   });
 
   it('la hauteur suit le rapport des images', () => {

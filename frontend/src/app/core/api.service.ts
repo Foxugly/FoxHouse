@@ -33,13 +33,15 @@ export class ErreurApi extends Error {
 }
 
 const SANS_REPONSE = 'Le serveur ne répond pas.';
+const ERREUR_SERVEUR = 'Le serveur a rencontré une erreur.';
 
 function enErreurApi(e: unknown): Observable<never> {
   if (!(e instanceof HttpErrorResponse)) {
     return throwError(() => e);
   }
   const corps = e.error;
-  const message = typeof corps?.erreur === 'string' ? corps.erreur : SANS_REPONSE;
+  const parDefaut = e.status >= 500 ? ERREUR_SERVEUR : SANS_REPONSE;
+  const message = typeof corps?.erreur === 'string' ? corps.erreur : parDefaut;
   return throwError(() => new ErreurApi(e.status, message, corps?.vue ?? undefined));
 }
 
@@ -59,12 +61,10 @@ export class ApiService {
 
   /** La partie en cours du joueur, ou `null` (réponse 204). */
   courante(): Observable<PartieCourante | null> {
-    return this.http
-      .get<PartieCourante>('/api/parties/courante/', { observe: 'response' })
-      .pipe(
-        map((r: HttpResponse<PartieCourante>) => (r.status === 204 ? null : r.body)),
-        catchError(enErreurApi),
-      );
+    return this.http.get<PartieCourante>('/api/parties/courante/', { observe: 'response' }).pipe(
+      map((r: HttpResponse<PartieCourante>) => (r.status === 204 ? null : r.body)),
+      catchError(enErreurApi),
+    );
   }
 
   partie(id: string): Observable<PartieCourante> {

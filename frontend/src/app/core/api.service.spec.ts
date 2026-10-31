@@ -77,4 +77,16 @@ describe('ApiService', () => {
     expect(e.message).toBe('Le serveur ne répond pas.');
     expect(e.vue).toBeUndefined();
   });
+
+  it('une erreur 500 sans corps dit que le serveur a rencontré une erreur', () => {
+    let erreur: unknown;
+    api.jeux().subscribe({ error: (e) => (erreur = e) });
+    http
+      .expectOne('/api/jeux/')
+      .flush('<h1>Server Error</h1>', { status: 500, statusText: 'Internal Server Error' });
+    const e = erreur as ErreurApi;
+    expect(e).toBeInstanceOf(ErreurApi);
+    expect(e.statut).toBe(500);
+    expect(e.message).toBe('Le serveur a rencontré une erreur.');
+  });
 });

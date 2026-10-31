@@ -1,10 +1,14 @@
 import { Location } from '@angular/common';
 import {
+  afterNextRender,
   ChangeDetectionStrategy,
   Component,
   computed,
   DestroyRef,
+  effect,
+  ElementRef,
   inject,
+  Injector,
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -39,6 +43,8 @@ export class PartiePage {
   private readonly router = inject(Router);
   /** Une réponse arrivée après la sortie de la page ne navigue pas et ne relance rien. */
   private readonly destroyRef = inject(DestroyRef);
+  private readonly hote = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
+  private readonly injector = inject(Injector);
 
   private id: string | null = null;
   /** La dernière vue reçue du serveur : sa version part avec chaque action. */
@@ -59,6 +65,16 @@ export class PartiePage {
 
   constructor() {
     this.destroyRef.onDestroy(() => this.relecture.arreter());
+    // Le bandeau disparaît à la fin de la relecture : s'il avait le focus (« Passer »), le focus
+    // va à la première action possible plutôt que de retomber sur la page.
+    let enCours = false;
+    effect(() => {
+      const maintenant = this.relecture.enCours();
+      if (enCours && !maintenant && this.focusDans('.bandeau')) {
+        this.focaliserApresRendu('app-menu button:not(:disabled)', '.panneau button');
+      }
+      enCours = maintenant;
+    });
     const partie = partieRecue(prendreEtatNavigation(inject(Location), 'partie'));
     if (partie) {
       this.id = partie.id;
@@ -139,7 +155,37 @@ export class PartiePage {
     this.relecture.passer();
   }
 
+  /** Une partie terminée se quitte sans confirmation. */
+  protected demanderNouvellePartie(): void {
+    if (this.vue()?.terminee) return this.nouvellePartie();
+    this.confirmation.set(true);
+    this.focaliserApresRendu('.confirmation button.secondaire');
+  }
+
+  protected annulerNouvellePartie(): void {
+    this.confirmation.set(false);
+    this.focaliserApresRendu('button.nouvelle');
+  }
+
   protected nouvellePartie(): void {
     void this.router.navigate(['']);
+  }
+
+  private focusDans(selecteur: string): boolean {
+    const actif = this.hote.ownerDocument.activeElement;
+    return !!actif && !!this.hote.querySelector(selecteur)?.contains(actif);
+  }
+
+  /** Après le prochain rendu, donne le focus au premier élément trouvé parmi les sélecteurs. */
+  private focaliserApresRendu(...selecteurs: string[]): void {
+    afterNextRender(
+      () => {
+        for (const s of selecteurs) {
+          const el = this.hote.querySelector<HTMLElement>(s);
+          if (el) return el.focus();
+        }
+      },
+      { injector: this.injector },
+    );
   }
 }

@@ -192,6 +192,15 @@ describe('AccueilPage', () => {
     expect(lien?.getAttribute('href')).toBe('/partie');
   });
 
+  it('propose « Voir la dernière partie » quand la partie est terminée', () => {
+    const vue = { ...vueFactice(), terminee: true };
+    const f = monter([jeuAvecOptions()], { id: 'p1', vue });
+    const liens = Array.from(racine(f).querySelectorAll('a')).map((a) => a.textContent?.trim());
+    expect(liens).toContain('Voir la dernière partie');
+    expect(liens).not.toContain('Reprendre la partie');
+    expect(racine(f).textContent).not.toContain('Elle remplacera la partie en cours.');
+  });
+
   it('affiche le message reçu de la navigation', async () => {
     const harness = await RouterTestingHarness.create();
     await TestBed.inject(Router).navigate([''], {

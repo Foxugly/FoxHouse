@@ -30,11 +30,11 @@ function vueAvecCible(): VueTable {
   return vue;
 }
 
-/** Une vue à 10 sièges de 13 cartes, construite à partir de la vue factice. */
-function vueDixSieges(): VueTable {
+/** Une vue à `n` sièges, `nbJoueur` cartes pour le joueur et 13 pour les autres, tirée de la vue factice. */
+function vueSieges(n: number, nbJoueur = 13): VueTable {
   const vue = vueFactice();
   const modele = vue.sieges[1];
-  vue.sieges = Array.from({ length: 10 }, (_, i) => ({
+  vue.sieges = Array.from({ length: n }, (_, i) => ({
     ...modele,
     id: i,
     nom: i === 0 ? 'Toi' : `Ordinateur ${i}`,
@@ -47,9 +47,13 @@ function vueDixSieges(): VueTable {
       siege: s.id,
       libelle: s.nom,
       nombre: null,
-      cartes: Array.from({ length: 13 }, (_, k) =>
+      cartes: Array.from({ length: s.id === 0 ? nbJoueur : 13 }, (_, k) =>
         s.id === 0
-          ? { id: `${k + 1}S-1`, valeur: String(k + 1), enseigne: 'S' }
+          ? {
+              id: `${(k % 13) + 1}S-${Math.floor(k / 13) + 1}`,
+              valeur: String((k % 13) + 1),
+              enseigne: 'S',
+            }
           : { cachee: true as const },
       ),
       groupes: [],
@@ -58,6 +62,30 @@ function vueDixSieges(): VueTable {
   ];
   vue.actions = [{ id: 'jouer', libelle: 'Jouer', cartes_min: 1, cartes_max: 1, cible: null }];
   return vue;
+}
+
+const vueDixSieges = () => vueSieges(10);
+
+/** Donne à la table la taille qu'elle mesurerait dans la page (pas de mise en page sous test). */
+function dimensionner(f: ComponentFixture<TableComponent>, largeur: number, hauteur: number) {
+  (f.componentInstance as unknown as { mesurer(l: number, h: number): void }).mesurer(
+    largeur,
+    hauteur,
+  );
+  f.detectChanges();
+}
+
+/** Les cartes de la main du joueur, en coordonnées de la table. */
+function cartesDuJoueur(f: ComponentFixture<TableComponent>) {
+  const el = siege(f, 0);
+  const main = el.querySelector<HTMLElement>('app-main')!;
+  const largeurMain = parseFloat(main.style.width);
+  const origine = parseFloat(el.style.left) - largeurMain / 2;
+  return Array.from(main.querySelectorAll<HTMLElement>('.place')).map((p) => ({
+    gauche: origine + parseFloat(p.style.left),
+    haut: p.style.top,
+    cw: parseFloat(p.querySelector<HTMLElement>('app-carte')!.style.width),
+  }));
 }
 
 /** Centre x du siège et largeur de sa main. */
@@ -270,5 +298,51 @@ describe('TableComponent', () => {
     const b = racine(monter(vueFinManche())).querySelector('h2')!;
     expect(a.id).not.toBe(b.id);
     expect(a.closest('[role="dialog"]')!.getAttribute('aria-labelledby')).toBe(a.id);
+  });
+
+  for (const nb of [14, 22]) {
+    it(`à 6 sièges sur un téléphone de 360 px, ${nb} cartes restent distinctes et sur la table`, () => {
+      const largeur = 328;
+      const f = monter(vueSieges(6, nb));
+      dimensionner(f, largeur, 520);
+      const cartes = cartesDuJoueur(f);
+      expect(cartes).toHaveLength(nb);
+      const cw = cartes[0].cw;
+      const rangees = new Map<string, number[]>();
+      for (const c of cartes) rangees.set(c.haut, [...(rangees.get(c.haut) ?? []), c.gauche]);
+      for (const xs of rangees.values()) {
+        expect(new Set(xs).size).toBe(xs.length);
+        for (let i = 1; i < xs.length; i++) {
+          expect(xs[i] - xs[i - 1]).toBeGreaterThanOrEqual(0.42 * cw * 0.8 - 1e-9);
+        }
+      }
+      for (const c of cartes) {
+        expect(c.gauche).toBeGreaterThanOrEqual(0);
+        expect(c.gauche + cw).toBeLessThanOrEqual(largeur);
+      }
+    });
+  }
+
+  it('à 6 sièges sur un téléphone, les voisins remontent au-dessus de la main du joueur', () => {
+    const f = monter(vueSieges(6, 14));
+    dimensionner(f, 328, 520);
+    // Demi-hauteur d'un siège : sa main, plus le nom et les compteurs (44 px).
+    const demi = (el: HTMLElement) =>
+      (parseFloat(el.querySelector<HTMLElement>('app-main')!.style.height) + 44) / 2;
+    const joueur = siege(f, 0);
+    const hautJoueur = parseFloat(joueur.style.top) - demi(joueur);
+    expect(mesures(f, 0).main).toBeGreaterThan(200);
+    for (const id of [1, 5]) {
+      const voisin = siege(f, id);
+      expect(parseFloat(voisin.style.top) + demi(voisin)).toBeLessThanOrEqual(hautJoueur);
+    }
+  });
+
+  it('sur un téléphone, le siège du joueur reste sur le feutre, pas sur le bord', () => {
+    const f = monter(vueSieges(6, 14));
+    dimensionner(f, 328, 520);
+    const joueur = siege(f, 0);
+    const main = parseFloat(joueur.querySelector<HTMLElement>('app-main')!.style.height);
+    expect(parseFloat(joueur.style.top) + (main + 44) / 2).toBeLessThanOrEqual(520 - 14);
   });
 });

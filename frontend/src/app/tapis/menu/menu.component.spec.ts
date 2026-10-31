@@ -51,7 +51,22 @@ describe('MenuComponent', () => {
     expect(bouton(f2, action.libelle).disabled).toBe(true);
     const f3 = monter(vue, { cartes: cartesDuJoueur(vue, 3), cible: null });
     expect(bouton(f3, action.libelle).disabled).toBe(false);
-    expect(bouton(f3, action.libelle).title).toBe('3 à 13 cartes');
+  });
+
+  it('un bouton désactivé montre ce qui manque, relié par aria-describedby', () => {
+    const vue = vueEnAttente();
+    const action = vue.actions.find((a) => a.cartes_min === 3)!;
+    const f = monter(vue, { cartes: cartesDuJoueur(vue, 2), cible: null });
+    const b = bouton(f, action.libelle);
+    const id = b.getAttribute('aria-describedby')!;
+    expect(id).toBeTruthy();
+    const raison = racine(f).querySelector(`[id="${id}"]`)!;
+    expect(raison.textContent?.trim()).toBe('3 à 13 cartes');
+    expect(raison.closest('.action')).toBe(b.closest('.action'));
+
+    const g = monter(vue, { cartes: cartesDuJoueur(vue, 3), cible: null });
+    expect(bouton(g, action.libelle).getAttribute('aria-describedby')).toBeNull();
+    expect(bouton(g, action.libelle).closest('.action')!.querySelector('.raison')).toBeNull();
   });
 
   it('occupé, tout est désactivé', () => {

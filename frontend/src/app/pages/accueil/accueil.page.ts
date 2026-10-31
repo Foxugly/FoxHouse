@@ -53,7 +53,9 @@ export class AccueilPage {
     (prendreEtatNavigation(inject(Location), 'message') as string | undefined) ?? null,
   );
   protected readonly jeux = signal<DescriptionJeu[] | null>(null);
-  protected readonly partieEnCours = signal(false);
+  /** La dernière partie du joueur, en cours ou terminée ; `null` s'il n'en a pas. */
+  protected readonly derniere = signal<{ terminee: boolean } | null>(null);
+  protected readonly partieEnCours = computed(() => this.derniere()?.terminee === false);
   protected readonly codeChoisi = signal<string | null>(null);
   protected readonly jeu = computed(() => {
     const jeux = this.jeux() ?? [];
@@ -91,8 +93,8 @@ export class AccueilPage {
       .courante()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (partie) => this.partieEnCours.set(partie !== null),
-        error: () => this.partieEnCours.set(false),
+        next: (partie) => this.derniere.set(partie && { terminee: partie.vue.terminee }),
+        error: () => this.derniere.set(null),
       });
   }
 

@@ -9,7 +9,7 @@ export interface CarteVisible {
 export interface Joker {
   id: string;
   joker: true;
-  represente?: string;
+  represente?: string | null;
 }
 
 export interface CarteCachee {
@@ -37,14 +37,7 @@ export interface Groupe {
   cartes: Carte[];
 }
 
-export type TypeZone =
-  | 'main'
-  | 'pile'
-  | 'combinaisons'
-  | 'pli'
-  | 'annonces'
-  | 'mises'
-  | 'communes';
+export type TypeZone = 'main' | 'pile' | 'combinaisons' | 'pli' | 'annonces' | 'mises' | 'communes';
 
 export interface Zone {
   id: string;
@@ -52,6 +45,7 @@ export interface Zone {
   siege: number | null;
   libelle: string;
   nombre: number | null;
+  /** De la première posée à la dernière : la carte du dessus d'une pile est la dernière. */
   cartes: Carte[];
   groupes: Groupe[];
 }

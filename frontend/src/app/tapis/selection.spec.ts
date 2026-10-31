@@ -22,7 +22,10 @@ describe('selection', () => {
 
   it('choisirCible remplace la cible', () => {
     expect(choisirCible(vide, 'g1').cible).toBe('g1');
-    expect(choisirCible({ cartes: ['c1'], cible: 'g1' }, null)).toEqual({ cartes: ['c1'], cible: null });
+    expect(choisirCible({ cartes: ['c1'], cible: 'g1' }, null)).toEqual({
+      cartes: ['c1'],
+      cible: null,
+    });
   });
 
   it('actionActivable respecte les bornes de cartes', () => {

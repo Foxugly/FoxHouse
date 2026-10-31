@@ -69,10 +69,11 @@ Architecture (`src/app/`) :
 - `core/` — types de la vue (`vue.ts`, miroir du schéma `tapis/vue.py`), client de l'API
   (`api.service.ts`, erreurs en `ErreurApi`), Sentry.
 - `tapis/` — la table, commune à tous les jeux : `table/` (sièges sur une ellipse, zones du centre,
-  panneau de résultat), `main/` (cartes superposées, une ou deux rangées), `carte/`, `menu/` (lignes
-  du menu et un bouton par action), `selection.ts` (cartes choisies et cible ; un bouton n'est actif
-  que si `cartes_min ≤ sélection ≤ cartes_max` et la cible demandée est choisie), `disposition.ts`
-  (calculs de placement, sans Angular).
+  panneau de résultat), `main/` (cartes superposées, en autant de rangées qu'il faut pour que le
+  coin de chaque carte reste visible), `carte/`, `menu/` (lignes du menu et un bouton par action,
+  ce qui manque à la sélection écrit sous un bouton inactif), `selection.ts` (cartes choisies et
+  cible ; un bouton n'est actif que si `cartes_min ≤ sélection ≤ cartes_max` et la cible demandée
+  est choisie), `disposition.ts` (calculs de placement, sans Angular).
 - `pages/` — `accueil` (formulaire généré depuis `GET jeux/`, reprise de la partie courante) et
   `partie` (table + menu, envoi des actions, relecture des `etapes` avant la vue finale).
 - `src/testing/` — vues d'exemple (`vues.ts`) tirées du serveur, dont `factice.json`.

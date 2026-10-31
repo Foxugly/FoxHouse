@@ -45,13 +45,13 @@
           <p id="question-nouvelle-partie">Quitter cette partie pour en commencer une autre ?</p>
           <div class="boutons">
             <button type="button" (click)="nouvellePartie()">Quitter la partie</button>
-            <button type="button" class="secondaire" (click)="confirmation.set(false)">
+            <button type="button" class="secondaire" (click)="annulerNouvellePartie()">
               Continuer la partie
             </button>
           </div>
         </div>
       } @else {
-        <button type="button" class="secondaire" (click)="confirmation.set(true)">
+        <button type="button" class="secondaire nouvelle" (click)="demanderNouvellePartie()">
           Nouvelle partie
         </button>
       }

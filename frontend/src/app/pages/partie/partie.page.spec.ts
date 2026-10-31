@@ -242,6 +242,47 @@ describe('PartiePage', () => {
     bouton('Quitter la partie')!.click();
     expect(naviguer).toHaveBeenCalledWith(['']);
   });
+  it('« Continuer la partie » rend le focus au bouton « Nouvelle partie »', async () => {
+    await ouvrirEnDirect(vueDebut());
+    bouton('Nouvelle partie')!.click();
+    harness.detectChanges();
+    await harness.fixture.whenStable();
+    expect(document.activeElement).toBe(bouton('Continuer la partie'));
+    bouton('Continuer la partie')!.click();
+    harness.detectChanges();
+    await harness.fixture.whenStable();
+    expect(document.activeElement).toBe(bouton('Nouvelle partie'));
+  });
+
+  it('une partie terminée se quitte sans confirmation', async () => {
+    await ouvrirEnDirect({ ...vueFactice(), terminee: true, actions: [] });
+    const naviguer = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+    bouton('Nouvelle partie')!.click();
+    expect(naviguer).toHaveBeenCalledWith(['']);
+    expect(bouton('Quitter la partie')).toBeUndefined();
+  });
+
+  it('quand « Passer » disparaît avec le focus, le focus va à la première action', async () => {
+    vi.useFakeTimers();
+    await ouvrirApresCreation(creee());
+    const passer = bouton('Passer')!;
+    passer.focus();
+    expect(document.activeElement).toBe(passer);
+    passer.click();
+    harness.detectChanges();
+    expect(document.activeElement).toBe(bouton('Retourner'));
+  });
+
+  it('à la fin naturelle de la relecture, le focus quitte aussi le bandeau', async () => {
+    vi.useFakeTimers();
+    await ouvrirApresCreation(creee());
+    bouton('Passer')!.focus();
+    vi.advanceTimersByTime(3 * DELAI_ETAPE);
+    harness.detectChanges();
+    expect(bandeau()).toBeNull();
+    expect(document.activeElement).toBe(bouton('Retourner'));
+  });
+
   it('une réponse arrivée après avoir quitté la page est abandonnée', async () => {
     await ouvrirEnDirect(vueFactice());
     bouton('Retourner')!.click();

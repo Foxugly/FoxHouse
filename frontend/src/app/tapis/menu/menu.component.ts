@@ -2,6 +2,9 @@ import { ChangeDetectionStrategy, Component, input, output } from '@angular/core
 import { Action, VueTable } from '../../core/vue';
 import { actionActivable, Selection } from '../selection';
 
+/** Numéro des instances, pour des id uniques dans la page. */
+let instances = 0;
+
 /** Ce que l'action attend de la sélection, en clair : « 3 à 13 cartes », « 1 carte et un groupe ». */
 export function contraintes(action: Action): string {
   const { cartes_min: min, cartes_max: max } = action;
@@ -33,5 +36,18 @@ export class MenuComponent {
     return !this.occupe() && actionActivable(action, this.selection());
   }
 
-  protected readonly contraintes = contraintes;
+  private readonly instance = ++instances;
+
+  /**
+   * Ce qui manque à la sélection pour une action désactivée, montré sous son bouton ; `null` si la
+   * sélection convient (le bouton n'est alors désactivé que le temps d'une requête).
+   */
+  protected raisonDesactivee(action: Action): string | null {
+    if (actionActivable(action, this.selection())) return null;
+    return contraintes(action) || null;
+  }
+
+  protected idRaison(action: Action): string {
+    return `raison-${this.instance}-${action.id}`;
+  }
 }

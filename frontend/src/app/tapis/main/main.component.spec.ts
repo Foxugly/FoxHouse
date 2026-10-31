@@ -46,6 +46,20 @@ describe('MainComponent', () => {
     expect(racine(f).querySelectorAll('.index')).toHaveLength(22);
   });
 
+  it('22 cartes dans 100 px : plus de deux rangées, jamais deux cartes au même x', () => {
+    const f = monter(cartes(22), 100, 34);
+    const p = places(f);
+    const rangees = new Map<string, number[]>();
+    for (const el of p) {
+      const x = parseFloat(el.style.left);
+      expect(x).toBeGreaterThanOrEqual(0);
+      expect(x + 34).toBeLessThanOrEqual(100 + 1e-9);
+      rangees.set(el.style.top, [...(rangees.get(el.style.top) ?? []), x]);
+    }
+    expect(rangees.size).toBeGreaterThan(2);
+    for (const xs of rangees.values()) expect(new Set(xs).size).toBe(xs.length);
+  });
+
   it('une main aérée tient sur une rangée sans index', () => {
     const f = monter(cartes(5), 400, 50);
     expect(new Set(places(f).map((el) => el.style.top)).size).toBe(1);

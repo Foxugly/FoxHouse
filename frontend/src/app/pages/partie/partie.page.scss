@@ -30,20 +30,32 @@
   overflow-y: auto;
 }
 
+/* Sur écran étroit, un seul écran sans défilement : le panneau compact en haut, la table prend
+   toute la hauteur restante. La main du joueur et les actions sont visibles ensemble. */
 @media (max-width: 759.98px) {
   .page {
     grid-template-columns: minmax(0, 1fr);
-    height: auto;
+    grid-template-rows: auto minmax(0, 1fr);
+    gap: 8px;
+    padding-block: 8px;
   }
 
   .panneau {
     order: -1;
-    overflow: visible;
+    gap: 6px;
+    max-height: 45dvh;
   }
 
-  .zone-table {
-    height: calc(100dvh - var(--hauteur-entete) - 28px);
-    min-height: 420px;
+  /* « Nouvelle partie » devient un petit bouton texte, aligné à droite. */
+  .panneau > button.nouvelle {
+    justify-self: end;
+    min-height: 32px;
+    padding: 4px 8px;
+    font-size: 0.78rem;
+    color: var(--attenue);
+    background: transparent;
+    border: 0;
+    text-decoration: underline;
   }
 }
 

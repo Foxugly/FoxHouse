@@ -15,9 +15,12 @@ const ENSEIGNES_FR: Record<string, string> = {
 const SYMBOLES: Record<string, string> = { S: '♠', H: '♥', D: '♦', C: '♣', '*': '*' };
 const VALEURS_COURTES: Record<string, string> = { J: 'V', Q: 'D', K: 'R' };
 
+const valeurCourte = (valeur: string) => VALEURS_COURTES[valeur] ?? valeur;
+const symbole = (enseigne: string) => SYMBOLES[enseigne] ?? enseigne;
+
 /** « 7C » → « 7♣ », « K* » → « R* » (couleur libre). */
 export function libelleCourt(valeur: string, enseigne: string): string {
-  return `${VALEURS_COURTES[valeur] ?? valeur}${SYMBOLES[enseigne] ?? enseigne}`;
+  return `${valeurCourte(valeur)}${symbole(enseigne)}`;
 }
 
 @Component({
@@ -68,11 +71,13 @@ export class CarteComponent {
     return libelleCourt(r.slice(0, -1), r.slice(-1));
   });
 
+  /** Le coin d'une carte très chevauchée : la valeur au-dessus de l'enseigne, en colonne étroite. */
   protected readonly index = computed(() => {
     const c = this.visible();
     if (!c || 'joker' in c || !this.indexRenforce()) return null;
     return {
-      texte: libelleCourt(c.valeur, c.enseigne),
+      valeur: valeurCourte(c.valeur),
+      enseigne: symbole(c.enseigne),
       rouge: c.enseigne === 'H' || c.enseigne === 'D',
     };
   });

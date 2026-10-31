@@ -3,7 +3,7 @@
   display: block;
   width: 100%;
   height: 100%;
-  min-height: 420px;
+  min-height: 300px;
   font-family: system-ui, sans-serif;
 }
 
@@ -76,10 +76,12 @@
   gap: 6px;
 }
 
-/* Les zones partagées, au centre du tapis, dans l'ordre reçu ; le cadre est calculé. */
+/* Les zones partagées, au centre du tapis, dans l'ordre reçu ; le cadre est calculé. Quand la
+   place manque (téléphone, beaucoup de sièges), le centre passe devant les sièges des autres
+   (z-index 2, après eux dans la page) mais derrière celui du joueur (3). */
 .centre {
   position: absolute;
-  z-index: 1;
+  z-index: 2;
   box-sizing: border-box;
   display: flex;
   flex-wrap: wrap;

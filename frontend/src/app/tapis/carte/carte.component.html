@@ -4,7 +4,10 @@
     <span class="badge">{{ b }}</span>
   }
   @if (index(); as i) {
-    <span class="index" [class.rouge]="i.rouge">{{ i.texte }}</span>
+    <span class="index" aria-hidden="true" [class.rouge]="i.rouge">
+      <span class="valeur">{{ i.valeur }}</span>
+      <span class="enseigne">{{ i.enseigne }}</span>
+    </span>
   }
 } @else {
   <div class="dos"></div>

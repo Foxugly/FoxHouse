@@ -3,10 +3,15 @@
     <p class="info" role="status">{{ m }}</p>
   }
 
-  @if (partieEnCours()) {
+  @if (derniere(); as d) {
     <section class="carte-page reprendre" aria-labelledby="titre-reprendre">
-      <h2 id="titre-reprendre">Une partie est en cours</h2>
-      <a class="bouton" routerLink="/partie">Reprendre la partie</a>
+      @if (d.terminee) {
+        <h2 id="titre-reprendre">La dernière partie est terminée</h2>
+        <a class="bouton" routerLink="/partie">Voir la dernière partie</a>
+      } @else {
+        <h2 id="titre-reprendre">Une partie est en cours</h2>
+        <a class="bouton" routerLink="/partie">Reprendre la partie</a>
+      }
     </section>
   }
 
