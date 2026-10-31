@@ -59,6 +59,7 @@ INSTALLED_APPS = [
     "parties",
     "rami",
     "huit",
+    "president",
 ]
 
 MIDDLEWARE = [
