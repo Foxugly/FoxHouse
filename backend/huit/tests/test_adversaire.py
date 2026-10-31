@@ -5,7 +5,9 @@ from django.test import SimpleTestCase
 from huit.adversaire import choisir, couleur_preferee
 from huit.jeu import Huit
 from huit.tests.outils import paquet_complet, partie, table, toutes_les_cartes
+from parties import deroulement
 from tapis.jeu import CoupRefuse
+from tapis.vue import valider_vue
 
 JEUX_D_OPTIONS = [
     {"cartes_speciales": True, "jokers": False},
@@ -103,6 +105,26 @@ class ChoixTests(SimpleTestCase):
     def test_rien_a_jouer(self):
         with self.assertRaises(ValueError):
             choisir(partie(), 1)
+
+
+class DeroulementTests(SimpleTestCase):
+    def test_partie_contre_la_machine_par_le_serveur(self):
+        # Le siège 0 est humain (il joue ici le coup que la machine jouerait à sa place) ;
+        # `deroulement.jouer` fait jouer les autres jusqu'à son tour.
+        jeu = Huit()
+        for nb in (2, 4, 6):
+            sieges = [{"type": "humain", "joueur": "a" * 32}] + [{"type": "machine"}] * (nb - 1)
+            e = partie(nb=nb, graine=nb, manches=1, jokers=True)
+            tours = 0
+            while jeu.joueur_actif(e) is not None:
+                self.assertEqual(jeu.joueur_actif(e), 0)
+                e, etapes = deroulement.jouer(jeu, e, sieges, 0, jeu.adversaire(e, 0))
+                for etape in etapes:
+                    self.assertTrue(etape["message"])
+                    valider_vue(etape["vue"])
+                tours += 1
+                self.assertLess(tours, 1000)
+            self.assertEqual(len(e["scores"]), 1)
 
 
 class PartiesEntreAdversairesTests(SimpleTestCase):
