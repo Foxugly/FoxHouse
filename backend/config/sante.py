@@ -5,8 +5,6 @@ exercise its dependency is worthless ») : la base (`SELECT 1`). 503 si elle man
 confidentiel.
 """
 
-import os
-
 from django.conf import settings
 from django.db import DatabaseError, connection
 from django.http import JsonResponse
@@ -26,7 +24,7 @@ def sante(request):
     return JsonResponse(
         {
             "status": "ok" if tout_ok else "degraded",
-            "version": os.environ.get("SENTRY_RELEASE") or settings.VERSION,
+            "version": settings.SENTRY_RELEASE or settings.VERSION,
             "checks": {"db": {"ok": base_ok}},
         },
         status=200 if tout_ok else 503,
