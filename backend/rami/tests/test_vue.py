@@ -183,13 +183,7 @@ class VueTests(SimpleTestCase):
             while rami.joueur_actif(e) is not None:
                 self._verifier(e)
                 j = rami.joueur_actif(e)
-                if e["phase"] == "piocher":
-                    coup = {"action": "piocher"}
-                elif e["phase"] == "jouer":
-                    coup = {"action": "defausser", "cartes": [e["mains"][j][0]]}
-                else:
-                    coup = {"action": "manche_suivante"}
-                e, _ = rami.appliquer(e, j, coup)
+                e, _ = rami.appliquer(e, j, rami.adversaire(e, j))
                 etats += 1
                 self.assertLess(etats, 5000, f"graine {graine} : la partie ne finit pas")
             self._verifier(e)

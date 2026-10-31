@@ -60,11 +60,6 @@ class RegistreTests(SimpleTestCase):
             (jeu.code, jeu.nom, jeu.min_joueurs, jeu.max_joueurs), ("rami", "Rami 51", 2, 6)
         )
 
-    def test_adversaire_pas_encore_branche(self):
-        with self.assertRaises(NotImplementedError):
-            Rami().adversaire(partie(), 0)
-
-
 class ActionsTests(SimpleTestCase):
     def test_actions_par_phase(self):
         rami = Rami()

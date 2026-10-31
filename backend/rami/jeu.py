@@ -2,6 +2,7 @@
 
 import copy
 
+from rami import adversaire as adversaire_rami
 from rami import manche, poses
 from rami import vue as vue_rami
 from rami.manche import _verbe, etiquette_carte
@@ -132,4 +133,4 @@ class Rami(Jeu):
         return vue_rami.vue(etat, joueur)
 
     def adversaire(self, etat, joueur: int) -> dict:
-        raise NotImplementedError("Les adversaires du rami arrivent à la tâche 7.")
+        return adversaire_rami.choisir(etat, joueur)
