@@ -6,9 +6,9 @@ un jeu »). Le tapis Angular ne change pas pour un nouveau jeu.
 | Jeu | App | État | Règles |
 |---|---|---|---|
 | Rami 51 | `rami` | livré (v1) | spec FoxHouse §6 |
-| 8 américain | `huit` | en cours | `specs/2026-10-31-jeux-huit-dame-president.md` §1 |
-| Dame de pique | `dame` | en cours | même document, §2 |
-| Président | `president` | en cours | même document, §3 |
+| 8 américain | `huit` | livré | `specs/2026-10-31-jeux-huit-dame-president.md` §1 |
+| Dame de pique | `dame` | livré | même document, §2 |
+| Président | `president` | livré | même document, §3 |
 
 Demandés par Renaud le 2026-10-31. Autres jeux cités dans la conception (§1) : Texas hold'em, whist,
 belote, blackjack.

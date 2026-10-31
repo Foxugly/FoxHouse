@@ -135,6 +135,11 @@ pour qu'on voie qui l'a pris ; le message de l'étape le dit (« Ouest remporte 
 Les points de la manche vont dans les compteurs du siège (« Points », « Total »).
 Au menu : manche, sens de l'échange, cœurs ouverts ou non.
 
+*Ajout au tapis, à l'intégration* : dans le bloc du siège, les zones `pli-<s>` repoussaient les
+étiquettes hors de la table et ne ressemblaient pas à une table de jeu. La table pose désormais toute
+zone de type `pli` rattachée à un siège entre ce siège et le centre (vide, rien). C'est générique :
+whist et belote en profiteront.
+
 ### 2.5 Adversaire
 
 Échange : donne la dame, le roi et l'as de pique s'il les a, puis ses plus hauts cœurs, puis ses

@@ -19,3 +19,6 @@ staticfiles/
 
 frontend/node_modules/
 frontend/.angular/
+
+# Worktrees des agents Claude Code
+.claude/

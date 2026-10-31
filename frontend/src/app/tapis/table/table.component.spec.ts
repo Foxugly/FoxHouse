@@ -345,4 +345,35 @@ describe('TableComponent', () => {
     const main = parseFloat(joueur.querySelector<HTMLElement>('app-main')!.style.height);
     expect(parseFloat(joueur.style.top) + (main + 44) / 2).toBeLessThanOrEqual(520 - 14);
   });
+  it("le pli d'un siège se pose entre le siège et le centre, hors du bloc du siège", () => {
+    const vue = vueSieges(4);
+    vue.zones.push(
+      ...vue.sieges.map((s) => ({
+        id: `pli-${s.id}`,
+        type: 'pli' as const,
+        siege: s.id,
+        libelle: 'Pli',
+        nombre: null,
+        cartes: s.id === 2 ? [] : [{ id: `${s.id + 2}H-1`, valeur: String(s.id + 2), enseigne: 'H' }],
+        groupes: [],
+      })),
+    );
+    const f = monter(vue);
+    dimensionner(f, 800, 560);
+    expect(racine(f).querySelectorAll('.siege [data-zone^="pli-"]').length).toBe(0);
+    const plis = tous(f, '.pli-siege');
+    expect(plis.map((p) => p.dataset['zone'])).toEqual(['pli-0', 'pli-1', 'pli-3']);
+    for (const p of plis) {
+      const id = Number(p.dataset['zone']!.split('-')[1]);
+      const s = siege(f, id);
+      const [sx, sy] = [parseFloat(s.style.left), parseFloat(s.style.top)];
+      const [px, py] = [parseFloat(p.style.left), parseFloat(p.style.top)];
+      // Entre le centre (400, 280) et le siège, plus près du centre.
+      expect(Math.hypot(px - 400, py - 280)).toBeLessThan(Math.hypot(sx - 400, sy - 280) / 2);
+      const signe = (v: number) => Math.sign(Math.round(v)) || 0;
+      expect(signe(px - 400)).toBe(signe(sx - 400));
+      expect(signe(py - 280)).toBe(signe(sy - 280));
+      expect(p.querySelectorAll('app-carte').length).toBe(1);
+    }
+  });
 });
