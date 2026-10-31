@@ -3,7 +3,7 @@ import * as Sentry from '@sentry/browser';
 
 import { SENTRY_DSN, SENTRY_ENV, SENTRY_RELEASE } from './sentry.config';
 
-/** Masque les secrets d'URL (jeton du magic link…) en query string comme en fragment. */
+/** Masque les paramètres d'URL sensibles (token, uid, code) en query string comme en fragment. */
 export function scrubUrl(url: string): string {
   return url.replace(/([?&#](?:token|uid|code)=)[^&#]*/gi, '$1[Filtered]');
 }

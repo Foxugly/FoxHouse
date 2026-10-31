@@ -1,10 +1,14 @@
 name: CI
 
+# Sur une PR : ce fichier seul. Sur un push vers main : appelé par deploy.yml
+# (`uses: ./.github/workflows/ci.yml`), une seule fois — un déclencheur `push`
+# ici ferait tourner la suite deux fois. Le cache de l'image PostgreSQL tient
+# quand même sous refs/heads/main : un workflow appelé hérite du `github.ref`
+# de l'appelant (le push), donc la portée de son cache est celle de main, que
+# les branches de PR peuvent lire.
 on:
-  push:
-    branches:
-      - main
   pull_request:
+  workflow_call:
 
 permissions:
   contents: read

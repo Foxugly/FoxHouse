@@ -1,8 +1,10 @@
 /**
  * Configuration Sentry du frontend.
  *
- * Le DSN d'un SPA est PUBLIC (conçu pour vivre dans le code client). Laisser vide
- * pour désactiver Sentry ; le DSN du projet « foxhouse-frontend » arrive au plan 3.
+ * Le DSN d'un SPA est PUBLIC (conçu pour vivre dans le code client) : sans risque
+ * à committer. Vide, Sentry reste inactif et le build est valide. Pour l'activer,
+ * coller ici le DSN du projet « foxhouse-frontend » (org foxugly-srl, de.sentry.io)
+ * une fois le projet créé ; la CSP de nginx autorise déjà *.ingest.de.sentry.io.
  */
 export const SENTRY_DSN = '';
 export const SENTRY_ENV = 'production';
