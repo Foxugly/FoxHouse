@@ -1,0 +1,10 @@
+[Unit]
+Description=FoxHouse — purge quotidienne (RGPD)
+
+[Timer]
+OnCalendar=*-*-* 04:40:00 UTC
+Persistent=true
+RandomizedDelaySec=10m
+
+[Install]
+WantedBy=timers.target

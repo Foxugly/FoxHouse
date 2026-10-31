@@ -1,0 +1,21 @@
+# FoxHouse — purge RGPD (manage.py purger_parties) : parties non modifiées depuis
+# RETENTION_PARTIES_JOURS (30) jours et sessions expirées. Lancé par foxhouse-purge.timer.
+[Unit]
+Description=FoxHouse — purge RGPD des parties inactives et des sessions expirées
+After=foxhouse-env-fetch.service postgresql.service
+Requires=foxhouse-env-fetch.service
+
+[Service]
+Type=oneshot
+User=django
+Group=www-data
+UMask=0027
+WorkingDirectory=/var/www/django_websites/FoxHouse/backend
+EnvironmentFile=/run/foxhouse/.env
+ExecStart=/var/www/django_websites/FoxHouse/.venv/bin/python manage.py purger_parties
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=full
+ProtectKernelTunables=yes
+ProtectControlGroups=yes
+RestrictSUIDSGID=yes

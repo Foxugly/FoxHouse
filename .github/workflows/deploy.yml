@@ -1,0 +1,220 @@
+name: Deploy
+
+# Modèle de la flotte (OPERATIONS.md §3.11), bundle S3 comme foxugly_website :
+# sur un push vers main, la CI (ci.yml, appelée ici) PUIS, si elle passe, le
+# déploiement : build du frontend → bundle (backend/, frontend/dist/, deploy/)
+# → S3 → SSM (root) sur l'instance.
+#
+# Pas de `pull_request` ni de `workflow_dispatch` ici : rien d'autre qu'un push
+# vers main ne déploie (une PR ou un fork n'atteint jamais le job `deploy`, ni
+# l'environnement `production` et ses secrets). Redéployer = « Re-run all jobs »
+# sur le dernier run de main.
+#
+# Secrets de l'environnement `production` :
+#   AWS_DEPLOY_ROLE_ARN  rôle foxhouse-deploy (OIDC) : s3:PutObject sur
+#                        foxugly-deploy/builds/foxhouse/*, ssm:SendCommand
+#   EC2_INSTANCE_ID      i-0fe664678563bae5f
+
+on:
+  push:
+    branches: [main]
+
+# Rien par défaut : chaque job demande ce dont il a besoin.
+permissions: {}
+
+jobs:
+  ci:
+    uses: ./.github/workflows/ci.yml
+    permissions:
+      contents: read
+
+  deploy:
+    needs: ci
+    # Garde explicite, même si seul un push vers main déclenche ce fichier : un
+    # déclencheur ajouté plus tard ne doit pas pouvoir déployer autre chose.
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # OIDC : sub = repo:Foxugly@3275928/FoxHouse@1440831627:environment:production
+    # (ou la forme ancienne repo:Foxugly/FoxHouse:environment:production) — les
+    # deux sont épinglées dans la confiance du rôle (deploy/iam-cloudshell.sh).
+    environment: production
+    permissions:
+      id-token: write
+      contents: read
+    # Deux déploiements ne se chevauchent jamais ; un push arrivé pendant un
+    # déploiement attend la fin (pas d'annulation en plein SSM).
+    concurrency:
+      group: deploy-foxhouse
+      cancel-in-progress: false
+    env:
+      AWS_REGION: eu-west-1
+      BUCKET: foxugly-deploy
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Version déployée (SHA du commit) pour Sentry et /health/
+        run: |
+          set -euo pipefail
+          # Frontend : la constante de sentry.config.ts (build statique).
+          sed -i "s|^export const SENTRY_RELEASE = '';$|export const SENTRY_RELEASE = '${GITHUB_SHA}';|" \
+            frontend/src/app/core/sentry.config.ts
+          grep -qx "export const SENTRY_RELEASE = '${GITHUB_SHA}';" frontend/src/app/core/sentry.config.ts \
+            || { echo "::error::SENTRY_RELEASE introuvable dans sentry.config.ts (ligne reformatée ?)"; exit 1; }
+          # Backend : fichier RELEASE lu par config/settings.py (_version_deployee).
+          echo "${GITHUB_SHA}" > backend/RELEASE
+
+      - name: Build du frontend
+        working-directory: frontend
+        run: |
+          npm ci
+          npm run build      # → frontend/dist/frontend/browser
+          test -s dist/frontend/browser/index.html
+
+      - name: Pré-compression (gzip + brotli, servis par nginx *_static)
+        working-directory: frontend
+        run: node scripts/precompresser.mjs dist/frontend/browser
+
+      - name: Assemblage du bundle
+        run: |
+          set -euo pipefail
+          BUNDLE="foxhouse-${GITHUB_SHA}.tar.gz"
+          echo "BUNDLE=$BUNDLE" >> "$GITHUB_ENV"
+          tar czf "$BUNDLE" --exclude='__pycache__' backend frontend/dist deploy
+          ls -l "$BUNDLE"
+
+      # Deux pushes rapprochés : leurs CI tournent en parallèle et la plus lente
+      # pourrait déployer APRÈS la plus récente, donc remettre l'ancien commit.
+      # Un run dont le SHA n'est plus la tête de main s'arrête ici, sans échec ;
+      # le run du commit le plus récent déploie.
+      - name: Toujours la tête de main ?
+        id: tete
+        run: |
+          tete=$(git ls-remote "https://github.com/${GITHUB_REPOSITORY}.git" refs/heads/main | cut -f1)
+          if [ "$tete" = "$GITHUB_SHA" ]; then
+            echo "a_jour=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice::main est passé à $tete : ce run ($GITHUB_SHA) ne déploie pas."
+            echo "a_jour=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Identifiants AWS (OIDC)
+        if: steps.tete.outputs.a_jour == 'true'
+        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: eu-west-1
+          role-session-name: gh-actions-foxhouse-${{ github.run_id }}
+
+      - name: Envoi du bundle vers S3
+        if: steps.tete.outputs.a_jour == 'true'
+        run: aws s3 cp --only-show-errors "$BUNDLE" "s3://$BUCKET/builds/foxhouse/$BUNDLE"
+
+      - name: Déploiement sur l'instance par SSM
+        id: ssm
+        if: steps.tete.outputs.a_jour == 'true'
+        env:
+          INSTANCE_ID: ${{ secrets.EC2_INSTANCE_ID }}
+        run: |
+          set -euo pipefail
+          # Commandes exécutées par ROOT, sous /bin/sh (dash), dans l'ordre. SSM
+          # les enchaîne en UN script et ne retient que le code de la dernière :
+          # `set -eu` d'abord, sinon une étape ratée passerait pour un succès.
+          #   1. root télécharge le bundle dans un mktemp -d privé (700) ;
+          #   2. MIROIR NU DE ROOT (/var/lib/fleet-deploy, root:root 700) alimenté
+          #      depuis GitHub (dépôt public, HTTPS anonyme) au SHA poussé ; le
+          #      script privilégié en est lu, installé en /usr/local/sbin et lancé :
+          #      script de configuration SSM, unités, vhost nginx — tous lus dans
+          #      le miroir, jamais dans l'arbre de django (§3.10 / §3.11) ;
+          #   3. DJANGO extrait le bundle (reçu sur stdin) dans son arbre, sous
+          #      .bundle-neuf ; root n'écrit jamais dans un dossier de django ;
+          #   4. en django : ssm-deploy.sh (pip, collectstatic, migrate, bascule) ;
+          #   5. en root : redémarrage de gunicorn ;
+          #   6. normalisation des droits : chown -R -h (ne suit aucun lien) en
+          #      root, chmod en django.
+          A=/var/www/django_websites/FoxHouse
+          M=/var/lib/fleet-deploy/FoxHouse.git
+          cat > ssm-params.json <<JSON
+          {
+            "commands": [
+              "set -eu",
+              "export HOME=/root AWS_SHARED_CREDENTIALS_FILE=/dev/null AWS_CONFIG_FILE=/dev/null",
+              "test -d $A || { echo 'ERREUR : $A absent, amorcer la machine (deploy/README.md, section 5)'; exit 1; }",
+              "T=\$(mktemp -d)",
+              "aws s3 cp --only-show-errors s3://$BUCKET/builds/foxhouse/$BUNDLE \"\$T/$BUNDLE\" --region $AWS_REGION",
+              "install -d -m 700 -o root -g root /var/lib/fleet-deploy",
+              "[ -d $M ] || git init --quiet --bare $M",
+              "git --git-dir=$M fetch --quiet --depth=1 https://github.com/Foxugly/FoxHouse.git $GITHUB_SHA",
+              "git --git-dir=$M cat-file -e '$GITHUB_SHA^{commit}'",
+              "git --git-dir=$M show $GITHUB_SHA:deploy/foxhouse-deploy-privileged.sh > /usr/local/sbin/foxhouse-deploy-privileged.sh",
+              "chown root:root /usr/local/sbin/foxhouse-deploy-privileged.sh && chmod 0755 /usr/local/sbin/foxhouse-deploy-privileged.sh",
+              "/usr/local/sbin/foxhouse-deploy-privileged.sh $M $GITHUB_SHA",
+              "chown -R -h django:www-data $A",
+              "sudo -u django sh -c 'umask 027; set -e; rm -rf $A/.bundle-neuf; mkdir $A/.bundle-neuf; tar --no-same-owner -xzf - -C $A/.bundle-neuf' < \"\$T/$BUNDLE\"",
+              "sudo -u django bash $A/.bundle-neuf/deploy/ssm-deploy.sh $GITHUB_SHA",
+              "systemctl restart foxhouse-gunicorn",
+              "chown -R -h django:www-data $A && sudo -u django chmod -R g-w,o-rwx $A",
+              "rm -rf \"\$T\""
+            ],
+            "executionTimeout": ["900"]
+          }
+          JSON
+          CMD_ID=$(aws ssm send-command \
+            --instance-ids "$INSTANCE_ID" \
+            --document-name AWS-RunShellScript \
+            --comment "Deploy foxhouse ${GITHUB_SHA::7}" \
+            --parameters file://ssm-params.json \
+            --query Command.CommandId --output text)
+          echo "SSM CommandId : $CMD_ID"
+          echo "cmd_id=$CMD_ID" >> "$GITHUB_OUTPUT"
+
+      - name: Attente de la fin du déploiement
+        if: steps.tete.outputs.a_jour == 'true'
+        env:
+          INSTANCE_ID: ${{ secrets.EC2_INSTANCE_ID }}
+          CMD_ID: ${{ steps.ssm.outputs.cmd_id }}
+        run: |
+          for _ in $(seq 1 190); do
+            STATUS=$(aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id "$INSTANCE_ID" \
+              --query Status --output text 2>/dev/null || echo Pending)
+            case "$STATUS" in
+              Success)
+                aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id "$INSTANCE_ID" --query StandardOutputContent --output text
+                exit 0 ;;
+              Failed|Cancelled|TimedOut)
+                echo "Déploiement : $STATUS"
+                echo "=== STDOUT ==="
+                aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id "$INSTANCE_ID" --query StandardOutputContent --output text
+                echo "=== STDERR ==="
+                aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id "$INSTANCE_ID" --query StandardErrorContent --output text
+                exit 1 ;;
+              *) sleep 5 ;;
+            esac
+          done
+          echo "::error::Délai dépassé (≈ 16 min)"; exit 1
+
+      - name: Vérification de /health/ (200 et version déployée)
+        if: steps.tete.outputs.a_jour == 'true'
+        run: |
+          for tentative in $(seq 1 10); do
+            code=$(curl -sS -o /tmp/sante.json -w '%{http_code}' --max-time 10 https://foxhouse.foxugly.com/health/ || echo 000)
+            echo "Tentative $tentative : HTTP $code"
+            if [ "$code" = "200" ]; then
+              cat /tmp/sante.json; echo
+              version=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1])).get("version", ""))' /tmp/sante.json)
+              if [ "$version" = "$GITHUB_SHA" ]; then
+                exit 0
+              fi
+              echo "Version servie : $version (attendue : $GITHUB_SHA)"
+            fi
+            sleep 6
+          done
+          echo "::error::/health/ ne répond pas 200 avec la version $GITHUB_SHA après le déploiement"; exit 1

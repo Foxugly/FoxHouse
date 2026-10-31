@@ -1,0 +1,40 @@
+# FoxHouse — gunicorn (WSGI) sur 127.0.0.1:8013, derrière nginx.
+# Installé par le déploiement (foxhouse-deploy-privileged.sh) depuis le miroir de root.
+[Unit]
+Description=FoxHouse — gunicorn (127.0.0.1:8013)
+After=network.target foxhouse-env-fetch.service postgresql.service
+Requires=foxhouse-env-fetch.service
+
+[Service]
+Type=simple
+User=django
+Group=www-data
+UMask=0027
+WorkingDirectory=/var/www/django_websites/FoxHouse/backend
+EnvironmentFile=/run/foxhouse/.env
+Environment="PYTHONUNBUFFERED=1"
+# Connexions persistantes : gunicorn seulement (OPERATIONS.md §3.22) ; la purge
+# et les commandes ponctuelles gardent le défaut 0 de config/settings.py.
+Environment="DB_CONN_MAX_AGE=60"
+# La machine joue ses coups dans la requête (2 000 au plus, en millisecondes) :
+# 2 workers suffisent et bornent la part de la machine partagée. Pas de log
+# d'accès (nginx journalise) ; les erreurs vont au journal (journalctl -u).
+ExecStart=/var/www/django_websites/FoxHouse/.venv/bin/gunicorn --workers 2 --timeout 30 \
+    --bind 127.0.0.1:8013 \
+    config.wsgi:application
+# Durcissement (OPERATIONS.md §3.22). Jamais ProtectSystem=strict : /var/www
+# doit rester inscriptible.
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=full
+ProtectKernelTunables=yes
+ProtectControlGroups=yes
+RestrictSUIDSGID=yes
+# Une partie emballée ne peut pas affamer les autres sites.
+CPUQuota=150%
+MemoryMax=512M
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

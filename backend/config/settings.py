@@ -120,8 +120,10 @@ elif _DB_ENGINE in ("postgres", "postgresql", "django.db.backends.postgresql"):
             "PASSWORD": os.environ.get("DB_PASSWORD", ""),
             "HOST": os.environ.get("DB_HOST", "127.0.0.1"),
             "PORT": os.environ.get("DB_PORT", "5432"),
-            # gunicorn (WSGI) : connexions persistantes permises (§3.22).
-            "CONN_MAX_AGE": 60,
+            # Connexions persistantes : 0 par défaut, 60 posé par l'unité gunicorn
+            # seule (`Environment="DB_CONN_MAX_AGE=60"`, OPERATIONS.md §3.22) ; les
+            # commandes ponctuelles (migrate, purge) gardent 0.
+            "CONN_MAX_AGE": int(os.environ.get("DB_CONN_MAX_AGE", "0")),
             "CONN_HEALTH_CHECKS": True,
         }
     }
@@ -197,9 +199,32 @@ LOGGING = {
     "root": {"handlers": ["console"], "level": os.environ.get("LOG_LEVEL", "WARNING")},
 }
 
-# Sentry (org foxugly-srl, projet foxhouse-backend). Rien n'est envoyé sans DSN.
+
+def _version_deployee():
+    """SHA du commit déployé, pour Sentry et `/health/`.
+
+    `SENTRY_RELEASE` de l'environnement d'abord, sinon le fichier `RELEASE` que
+    le déploiement écrit dans le bundle (`.github/workflows/deploy.yml`). Vide
+    en développement.
+    """
+    depuis_env = os.environ.get("SENTRY_RELEASE", "").strip()
+    if depuis_env:
+        return depuis_env
+    try:
+        return (BASE_DIR / "RELEASE").read_text(encoding="utf-8").strip()
+    except OSError:
+        return ""
+
+
+SENTRY_RELEASE = _version_deployee()
+
+# Sentry (org foxugly-srl, projet foxhouse-backend). Rien n'est envoyé sans DSN
+# ni sans environnement : pas de défaut « production » dans le code (comme
+# foxugly_website), sinon un poste de développement qui reçoit un DSN remonterait
+# ses erreurs étiquetées production. SSM pose SENTRY_ENVIRONMENT=production.
 SENTRY_DSN = os.environ.get("SENTRY_DSN", "").strip()
-if SENTRY_DSN:
+SENTRY_ENVIRONMENT = os.environ.get("SENTRY_ENVIRONMENT", "").strip()
+if SENTRY_DSN and SENTRY_ENVIRONMENT:
     import sentry_sdk
     from sentry_sdk.integrations.django import DjangoIntegration
 
@@ -207,8 +232,8 @@ if SENTRY_DSN:
 
     sentry_sdk.init(
         dsn=SENTRY_DSN,
-        environment=os.environ.get("SENTRY_ENVIRONMENT", "production"),
-        release=os.environ.get("SENTRY_RELEASE", "") or None,
+        environment=SENTRY_ENVIRONMENT,
+        release=SENTRY_RELEASE or None,
         integrations=[DjangoIntegration()],
         traces_sample_rate=float(os.environ.get("SENTRY_TRACES_SAMPLE_RATE", "0")),
         **reglages_sentry(),

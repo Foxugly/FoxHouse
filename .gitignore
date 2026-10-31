@@ -22,3 +22,6 @@ frontend/.angular/
 
 # Worktrees des agents Claude Code
 .claude/
+
+# Écrit par la CI au déploiement (SHA du commit), lu par config/settings.py
+backend/RELEASE
