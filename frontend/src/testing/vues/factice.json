@@ -1,0 +1,58 @@
+{
+  "schema": 1,
+  "jeu": "factice",
+  "version": 0,
+  "terminee": false,
+  "sieges": [
+    { "id": 0, "nom": "Toi", "actif": true, "compteurs": [] },
+    { "id": 1, "nom": "Ordinateur 1", "actif": false, "compteurs": [] },
+    { "id": 2, "nom": "Ordinateur 2", "actif": false, "compteurs": [] }
+  ],
+  "zones": [
+    {
+      "id": "main-0",
+      "type": "main",
+      "siege": 0,
+      "libelle": "Ta main",
+      "nombre": 3,
+      "cartes": [
+        { "id": "7H-0", "valeur": "7", "enseigne": "H" },
+        { "id": "KS-0", "valeur": "K", "enseigne": "S" },
+        { "id": "2D-0", "valeur": "2", "enseigne": "D" }
+      ],
+      "groupes": []
+    },
+    {
+      "id": "main-1",
+      "type": "main",
+      "siege": 1,
+      "libelle": "Ordinateur 1",
+      "nombre": 3,
+      "cartes": [{ "cachee": true }, { "cachee": true }, { "cachee": true }],
+      "groupes": []
+    },
+    {
+      "id": "main-2",
+      "type": "main",
+      "siege": 2,
+      "libelle": "Ordinateur 2",
+      "nombre": 3,
+      "cartes": [{ "cachee": true }, { "cachee": true }, { "cachee": true }],
+      "groupes": []
+    },
+    {
+      "id": "centre",
+      "type": "pile",
+      "siege": null,
+      "libelle": "Centre",
+      "nombre": 1,
+      "cartes": [{ "id": "9C-0", "valeur": "9", "enseigne": "C" }],
+      "groupes": []
+    }
+  ],
+  "menu": [],
+  "actions": [
+    { "id": "retourner", "libelle": "Retourner", "cartes_min": 0, "cartes_max": 0, "cible": null }
+  ],
+  "resultat": null
+}

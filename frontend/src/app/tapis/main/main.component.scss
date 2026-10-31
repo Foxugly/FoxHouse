@@ -1,0 +1,23 @@
+:host {
+  position: relative;
+  display: block;
+}
+
+.place {
+  position: absolute;
+  transition: transform 0.12s ease;
+}
+
+.place[role='button'] {
+  cursor: pointer;
+}
+
+.place[role='button']:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+.place.soulevee {
+  transform: translateY(-14px);
+}

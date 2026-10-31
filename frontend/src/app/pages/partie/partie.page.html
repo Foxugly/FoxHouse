@@ -1,0 +1,64 @@
+@if (vueAffichee(); as vue) {
+  <div class="page">
+    <!-- Pendant la relecture, un clic sur la table saute à la vue finale. Au clavier, c'est le
+         bouton « Passer » du bandeau : la zone n'a pas à être focalisable. -->
+    <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
+    <div class="zone-table" (click)="passer()">
+      @if (relecture.etape(); as etape) {
+        <div class="bandeau" role="status">
+          <span class="message">{{ etape.message }}</span>
+          <button type="button" (click)="passer()">Passer</button>
+        </div>
+      }
+      <app-table
+        [vue]="vue"
+        [selection]="selectionAffichee()"
+        (basculer)="basculer($event)"
+        (choisirCible)="choisirCible($event)"
+      />
+    </div>
+
+    <aside class="panneau">
+      <app-menu
+        [vue]="vue"
+        [selection]="selectionAffichee()"
+        [occupe]="bloque()"
+        (agir)="agir($event)"
+      />
+
+      @if (erreur(); as message) {
+        <div class="erreur" role="alert">
+          <p>{{ message }}</p>
+          <button
+            type="button"
+            class="fermer"
+            aria-label="Fermer le message"
+            (click)="erreur.set(null)"
+          >
+            ×
+          </button>
+        </div>
+      }
+
+      @if (confirmation()) {
+        <div class="confirmation" role="group" aria-labelledby="question-nouvelle-partie">
+          <p id="question-nouvelle-partie">Quitter cette partie pour en commencer une autre ?</p>
+          <div class="boutons">
+            <button type="button" (click)="nouvellePartie()">Quitter la partie</button>
+            <button type="button" class="secondaire" (click)="annulerNouvellePartie()">
+              Continuer la partie
+            </button>
+          </div>
+        </div>
+      } @else {
+        <button type="button" class="secondaire nouvelle" (click)="demanderNouvellePartie()">
+          Nouvelle partie
+        </button>
+      }
+    </aside>
+  </div>
+} @else if (erreur(); as message) {
+  <p class="chargement" role="alert">{{ message }}</p>
+} @else {
+  <p class="chargement">Chargement de la partie…</p>
+}

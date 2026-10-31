@@ -1,0 +1,165 @@
+:host {
+  display: block;
+  font-family: system-ui, sans-serif;
+  color: var(--texte);
+}
+
+.accueil {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+  box-sizing: border-box;
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 24px 16px;
+}
+
+.carte-page {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 14px;
+  padding: 18px;
+  background: var(--panneau);
+  border: 1px solid var(--trait);
+  border-radius: 14px;
+}
+
+h1,
+h2 {
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+.nom-jeu {
+  font-size: 1rem;
+  color: var(--attenue);
+}
+
+.reprendre {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+}
+
+.note,
+.info {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--attenue);
+}
+
+.info[role='status'] {
+  padding: 10px 14px;
+  color: var(--etiquette-texte);
+  background: var(--etiquette);
+  border-radius: 10px;
+}
+
+.jeux {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.jeu {
+  min-height: 40px;
+  padding: 6px 12px;
+  font: inherit;
+  color: var(--texte);
+  background: var(--fond);
+  border: 1px solid var(--trait);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.jeu[aria-pressed='true'] {
+  color: #fff;
+  background: var(--bouton);
+  border-color: var(--bouton);
+}
+
+form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 14px;
+}
+
+.champ {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 6px;
+}
+
+.libelle {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--attenue);
+}
+
+.case {
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  font-size: 0.95rem;
+}
+
+.case input {
+  width: 22px;
+  height: 22px;
+  margin: 0;
+  accent-color: var(--bouton);
+}
+
+select,
+input[type='number'] {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 40px;
+  padding: 6px 8px;
+  font: inherit;
+  color: var(--texte);
+  background: var(--fond);
+  border: 1px solid var(--trait);
+  border-radius: 8px;
+}
+
+.bouton {
+  justify-self: start;
+  display: inline-block;
+  min-height: 40px;
+  box-sizing: border-box;
+  padding: 9px 16px;
+  font:
+    600 0.9rem system-ui,
+    sans-serif;
+  color: #fff;
+  text-decoration: none;
+  background: var(--bouton);
+  border: 0;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.bouton:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.erreur {
+  margin: 0;
+  padding: 10px 12px;
+  font-size: 0.9rem;
+  color: var(--erreur-texte);
+  background: var(--erreur-fond);
+  border: 1px solid var(--erreur-trait);
+  border-radius: 10px;
+}
+
+a:focus-visible,
+button:focus-visible,
+select:focus-visible,
+input:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}

@@ -1,0 +1,229 @@
+:host {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 300px;
+  font-family: system-ui, sans-serif;
+}
+
+/* Le tapis ovale : feutre en dégradé, bord en bois. */
+.feutre {
+  position: absolute;
+  inset: 0;
+  box-sizing: border-box;
+  border: 14px solid var(--bord);
+  border-radius: 50% / 46%;
+  background: radial-gradient(ellipse at 50% 45%, var(--feutre-clair), var(--feutre) 70%);
+  box-shadow: inset 0 0 40px rgb(0 0 0 / 35%);
+}
+
+.siege {
+  /* z-index posé dans le gabarit : le siège du joueur passe devant ses voisins. */
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  transform: translate(-50%, -50%);
+}
+
+/* Le joueur : sa main au-dessus de son nom. */
+.siege.joueur .zones-siege {
+  order: -1;
+}
+
+.nom {
+  max-width: 100%;
+  overflow: hidden;
+  padding: 2px 8px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #fff;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  background: rgb(0 0 0 / 35%);
+  border-radius: 99px;
+}
+
+.siege.actif .nom {
+  color: #2b220a;
+  background: var(--accent);
+  box-shadow: 0 0 0 3px rgb(255 255 255 / 35%);
+}
+
+.compteurs {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 2px 8px;
+  font:
+    500 0.68rem ui-monospace,
+    monospace;
+  color: rgb(255 255 255 / 80%);
+}
+
+.zones-siege {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.zone-siege {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Les zones partagées, au centre du tapis, dans l'ordre reçu ; le cadre est calculé. Quand la
+   place manque (téléphone, beaucoup de sièges), le centre passe devant les sièges des autres
+   (z-index 2, après eux dans la page) mais derrière celui du joueur (3). */
+.centre {
+  position: absolute;
+  z-index: 2;
+  box-sizing: border-box;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  align-items: center;
+  justify-content: center;
+  overflow-y: auto;
+  padding-top: 10px;
+  scrollbar-color: rgb(255 255 255 / 35%) transparent;
+  scrollbar-width: thin;
+  transform: translate(-50%, -50%);
+}
+
+.zone {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  min-width: 48px;
+  min-height: 40px;
+  padding: 16px 8px 8px;
+  border: 1.5px dashed rgb(255 255 255 / 30%);
+  border-radius: 10px;
+}
+
+.zone > .libelle {
+  position: absolute;
+  top: -9px;
+  left: 8px;
+  padding: 3px 6px;
+  font:
+    500 0.62rem/1 ui-monospace,
+    monospace;
+  color: var(--etiquette-texte);
+  white-space: nowrap;
+  background: var(--etiquette);
+  border-radius: 4px;
+}
+
+.zone-siege > .libelle {
+  font:
+    500 0.62rem/1 ui-monospace,
+    monospace;
+  color: rgb(255 255 255 / 80%);
+}
+
+.nombre {
+  font:
+    500 0.7rem ui-monospace,
+    monospace;
+  color: #fff;
+}
+
+.vide {
+  border: 1.5px dashed rgb(255 255 255 / 30%);
+  border-radius: 6%;
+}
+
+.groupe {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0 4px 4px;
+  border: 2px solid transparent;
+  border-radius: 8px;
+}
+
+.groupe.en-attente {
+  border: 2px dashed var(--accent);
+  background: rgb(0 0 0 / 12%);
+}
+
+.groupe.en-attente .mention {
+  font:
+    500 0.62rem/1.2 ui-monospace,
+    monospace;
+  color: var(--accent);
+}
+
+.groupe.ciblable {
+  cursor: pointer;
+}
+
+.groupe.ciblable:hover {
+  background: rgb(255 255 255 / 10%);
+}
+
+.groupe.cible {
+  border-color: var(--accent);
+  background: rgb(255 255 255 / 15%);
+}
+
+.groupe.ciblable:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Le résultat, par-dessus la table. */
+.voile {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgb(0 0 0 / 35%);
+  border-radius: 50% / 46%;
+}
+
+.resultat {
+  max-width: 100%;
+  max-height: 100%;
+  overflow: auto;
+  padding: 16px 20px;
+  color: var(--texte);
+  background: var(--panneau);
+  border-radius: 12px;
+  box-shadow: 0 8px 30px rgb(0 0 0 / 40%);
+}
+
+.resultat h2 {
+  margin: 0 0 12px;
+  font-size: 1.05rem;
+}
+
+.resultat table {
+  border-collapse: collapse;
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.resultat th,
+.resultat td {
+  padding: 4px 10px;
+  text-align: right;
+  border-bottom: 1px solid var(--trait);
+}
+
+.resultat th:first-child,
+.resultat td:first-child {
+  text-align: left;
+}

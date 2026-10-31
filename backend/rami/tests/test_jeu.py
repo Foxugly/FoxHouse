@@ -89,6 +89,19 @@ class ActionsTests(SimpleTestCase):
         e["phase"] = "terminee"
         self.assertEqual(rami.actions_permises(e, 0), [])
 
+    def test_joker_recupere_masque_defausse(self):
+        e = etat_ouvert(["2S-2", "5S-1"], defausse_a_poser=True)
+        e["prise"] = "2S-2"
+        self.assertIn("defausser", ids(Rami().actions_permises(e, 0)))
+        self.assertIn("rendre_defausse", ids(Rami().actions_permises(e, 0)))
+        e["mains"][0].append("JK-2")
+        e["joker_recupere"] = "JK-2"
+        actions = ids(Rami().actions_permises(e, 0))
+        self.assertNotIn("defausser", actions)
+        self.assertNotIn("rendre_defausse", actions)
+        self.assertIn("poser", actions)
+        self.assertIn("ajouter", actions)
+
     def test_descripteurs(self):
         e = etat_ouvert(["2S-2", "5S-1"])
         par_id = {a["id"]: a for a in Rami().actions_permises(e, 0)}

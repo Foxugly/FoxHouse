@@ -113,6 +113,11 @@ class Rami(Jeu):
             (a for a in self.actions_permises(etat, joueur) if a["id"] == coup["action"]), None
         )
         if action is None:
+            # Ces deux actions ne sont plus proposées : on dit pourquoi plutôt que « impossible ».
+            if coup["action"] == "defausser" and etat["joker_recupere"] in etat["mains"][joueur]:
+                raise CoupRefuse("Utilise d'abord le joker récupéré.")
+            if coup["action"] == "rendre_defausse" and etat["joker_recupere"] in etat["mains"][joueur]:
+                raise CoupRefuse("Rejoue d'abord le joker récupéré.")
             raise CoupRefuse("Action impossible maintenant.")
         cartes = coup["cartes"]
         _exiger_nombre(action, cartes)

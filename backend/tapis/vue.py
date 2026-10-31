@@ -1,4 +1,8 @@
-"""Schéma de la vue d'une partie, commun à tous les jeux. N'importe pas Django."""
+"""Schéma de la vue d'une partie, commun à tous les jeux. N'importe pas Django.
+
+Ordre des cartes d'une zone : de la première posée à la dernière. Pour une pile, la carte du
+dessus est donc le dernier élément de `cartes` (le tapis montre `cartes[-1]`).
+"""
 
 from tapis import cartes as c
 

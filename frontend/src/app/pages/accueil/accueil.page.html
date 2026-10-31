@@ -1,0 +1,108 @@
+<div class="accueil">
+  @if (message(); as m) {
+    <p class="info" role="status">{{ m }}</p>
+  }
+
+  @if (derniere(); as d) {
+    <section class="carte-page reprendre" aria-labelledby="titre-reprendre">
+      @if (d.terminee) {
+        <h2 id="titre-reprendre">La dernière partie est terminée</h2>
+        <a class="bouton" routerLink="/partie">Voir la dernière partie</a>
+      } @else {
+        <h2 id="titre-reprendre">Une partie est en cours</h2>
+        <a class="bouton" routerLink="/partie">Reprendre la partie</a>
+      }
+    </section>
+  }
+
+  @if (erreurChargement(); as e) {
+    <p class="erreur" role="alert">{{ e }}</p>
+  } @else if (jeux() === null) {
+    <p class="info">Chargement des jeux…</p>
+  } @else if (jeu(); as j) {
+    <section class="carte-page" aria-labelledby="titre-nouvelle">
+      <h1 id="titre-nouvelle">Nouvelle partie</h1>
+      @if (partieEnCours()) {
+        <p class="note">Elle remplacera la partie en cours.</p>
+      }
+
+      @if (jeux()!.length > 1) {
+        <div class="jeux" role="group" aria-label="Jeu">
+          @for (autre of jeux(); track autre.code) {
+            <button
+              type="button"
+              class="jeu"
+              [attr.aria-pressed]="autre.code === j.code"
+              (click)="codeChoisi.set(autre.code)"
+            >
+              {{ autre.nom }}
+            </button>
+          }
+        </div>
+      } @else {
+        <h2 class="nom-jeu">{{ j.nom }}</h2>
+      }
+
+      <form (submit)="commencer($event)">
+        <label class="champ">
+          <span class="libelle">Nombre de joueurs</span>
+          <select data-option="nb_joueurs" (change)="choisirNbJoueurs($event)">
+            @for (n of nombresDeJoueurs(); track n) {
+              <option [value]="n" [selected]="n === nbJoueurs()">{{ n }}</option>
+            }
+          </select>
+        </label>
+
+        @for (option of j.options; track option.code) {
+          @switch (option.type) {
+            @case ('choix') {
+              <label class="champ">
+                <span class="libelle">{{ option.libelle }}</span>
+                <select [attr.data-option]="option.code" (change)="choisirOption(option, $event)">
+                  @for (c of option.choix ?? []; track $index) {
+                    <option [selected]="c.valeur === valeurs()[option.code]">
+                      {{ c.libelle }}
+                    </option>
+                  }
+                </select>
+              </label>
+            }
+            @case ('booleen') {
+              <label class="champ case">
+                <input
+                  type="checkbox"
+                  [attr.data-option]="option.code"
+                  [checked]="valeurs()[option.code] === true"
+                  (change)="cocher(option, $event)"
+                />
+                <span>{{ option.libelle }}</span>
+              </label>
+            }
+            @case ('entier') {
+              <label class="champ">
+                <span class="libelle">{{ option.libelle }}</span>
+                <input
+                  type="number"
+                  step="1"
+                  inputmode="numeric"
+                  [attr.data-option]="option.code"
+                  [attr.min]="option.minimum ?? null"
+                  [attr.max]="option.maximum ?? null"
+                  [value]="valeurs()[option.code]"
+                  (change)="saisirEntier(option, $event)"
+                />
+              </label>
+            }
+          }
+        }
+
+        <button type="submit" class="bouton" [disabled]="envoi()">Commencer</button>
+        @if (erreur(); as e) {
+          <p class="erreur" role="alert">{{ e }}</p>
+        }
+      </form>
+    </section>
+  } @else {
+    <p class="info">Aucun jeu disponible.</p>
+  }
+</div>

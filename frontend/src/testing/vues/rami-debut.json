@@ -1,0 +1,351 @@
+{
+  "schema": 1,
+  "jeu": "rami",
+  "version": 0,
+  "terminee": false,
+  "sieges": [
+    {
+      "id": 0,
+      "nom": "Toi",
+      "actif": true,
+      "compteurs": [
+        {
+          "libelle": "Cartes",
+          "valeur": 13
+        },
+        {
+          "libelle": "Pénalités",
+          "valeur": 0
+        }
+      ]
+    },
+    {
+      "id": 1,
+      "nom": "Ordinateur 1",
+      "actif": false,
+      "compteurs": [
+        {
+          "libelle": "Cartes",
+          "valeur": 13
+        },
+        {
+          "libelle": "Pénalités",
+          "valeur": 0
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "nom": "Ordinateur 2",
+      "actif": false,
+      "compteurs": [
+        {
+          "libelle": "Cartes",
+          "valeur": 13
+        },
+        {
+          "libelle": "Pénalités",
+          "valeur": 0
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "nom": "Ordinateur 3",
+      "actif": false,
+      "compteurs": [
+        {
+          "libelle": "Cartes",
+          "valeur": 13
+        },
+        {
+          "libelle": "Pénalités",
+          "valeur": 0
+        }
+      ]
+    }
+  ],
+  "zones": [
+    {
+      "id": "main-0",
+      "type": "main",
+      "siege": 0,
+      "libelle": "Ta main",
+      "cartes": [
+        {
+          "id": "4D-1",
+          "valeur": "4",
+          "enseigne": "D"
+        },
+        {
+          "id": "QD-2",
+          "valeur": "Q",
+          "enseigne": "D"
+        },
+        {
+          "id": "AS-2",
+          "valeur": "A",
+          "enseigne": "S"
+        },
+        {
+          "id": "JD-1",
+          "valeur": "J",
+          "enseigne": "D"
+        },
+        {
+          "id": "AH-2",
+          "valeur": "A",
+          "enseigne": "H"
+        },
+        {
+          "id": "4H-1",
+          "valeur": "4",
+          "enseigne": "H"
+        },
+        {
+          "id": "AC-1",
+          "valeur": "A",
+          "enseigne": "C"
+        },
+        {
+          "id": "4C-2",
+          "valeur": "4",
+          "enseigne": "C"
+        },
+        {
+          "id": "7H-1",
+          "valeur": "7",
+          "enseigne": "H"
+        },
+        {
+          "id": "5D-1",
+          "valeur": "5",
+          "enseigne": "D"
+        },
+        {
+          "id": "9C-1",
+          "valeur": "9",
+          "enseigne": "C"
+        },
+        {
+          "id": "JK-4",
+          "joker": true
+        },
+        {
+          "id": "3D-1",
+          "valeur": "3",
+          "enseigne": "D"
+        }
+      ],
+      "nombre": null,
+      "groupes": []
+    },
+    {
+      "id": "main-1",
+      "type": "main",
+      "siege": 1,
+      "libelle": "Ordinateur 1",
+      "cartes": [
+        {
+          "cachee": true
+        },
+        {
+          "cachee": true
+        },
+        {
+          "cachee": true
+        },
+        {
+          "cachee": true
+        },
+        {
+          "cachee": true
+        },
+        {
+          "cachee": true
+        },
+        {
+          "cachee": true
+        },
+        {
+          "cachee": true
+        },
+        {
+          "cachee": true
+        },
+        {
+          "cachee": true
+        },
+        {
+          "cachee": true
+        },
+        {
+          "cachee": true
+        },
+        {
+          "cachee": true
+        }
+      ],
+      "nombre": null,
+      "groupes": []
+    },
+    {
+      "id": "main-2",
+      "type": "main",
+      "siege": 2,
+      "libelle": "Ordinateur 2",
+      "cartes": [
+        {
+          "cachee": true
+        },
+        {
+          "cachee": true
+        },
+        {
+          "cachee": true
+        },
+        {
+          "cachee": true
+        },
+        {
+          "cachee": true
+        },
+        {
+          "cachee": true
+        },
+        {
+          "cachee": true
+        },
+        {
+          "cachee": true
+        },
+        {
+          "cachee": true
+        },
+        {
+          "cachee": true
+        },
+        {
+          "cachee": true
+        },
+        {
+          "cachee": true
+        },
+        {
+          "cachee": true
+        }
+      ],
+      "nombre": null,
+      "groupes": []
+    },
+    {
+      "id": "main-3",
+      "type": "main",
+      "siege": 3,
+      "libelle": "Ordinateur 3",
+      "cartes": [
+        {
+          "cachee": true
+        },
+        {
+          "cachee": true
+        },
+        {
+          "cachee": true
+        },
+        {
+          "cachee": true
+        },
+        {
+          "cachee": true
+        },
+        {
+          "cachee": true
+        },
+        {
+          "cachee": true
+        },
+        {
+          "cachee": true
+        },
+        {
+          "cachee": true
+        },
+        {
+          "cachee": true
+        },
+        {
+          "cachee": true
+        },
+        {
+          "cachee": true
+        },
+        {
+          "cachee": true
+        }
+      ],
+      "nombre": null,
+      "groupes": []
+    },
+    {
+      "id": "pioche",
+      "type": "pile",
+      "siege": null,
+      "libelle": "Pioche",
+      "cartes": [],
+      "nombre": 55,
+      "groupes": []
+    },
+    {
+      "id": "defausse",
+      "type": "pile",
+      "siege": null,
+      "libelle": "Défausse",
+      "cartes": [
+        {
+          "id": "9D-1",
+          "valeur": "9",
+          "enseigne": "D"
+        }
+      ],
+      "nombre": 1,
+      "groupes": []
+    },
+    {
+      "id": "table",
+      "type": "combinaisons",
+      "siege": null,
+      "libelle": "Table",
+      "cartes": [],
+      "nombre": null,
+      "groupes": []
+    }
+  ],
+  "menu": [
+    {
+      "libelle": "Manche",
+      "valeur": "1 / 5"
+    },
+    {
+      "libelle": "Ouverture",
+      "valeur": "pas encore"
+    }
+  ],
+  "actions": [
+    {
+      "id": "piocher",
+      "libelle": "Piocher",
+      "cartes_min": 0,
+      "cartes_max": 0,
+      "cible": null
+    },
+    {
+      "id": "prendre_defausse",
+      "libelle": "Prendre la défausse",
+      "cartes_min": 0,
+      "cartes_max": 0,
+      "cible": null
+    }
+  ],
+  "resultat": null
+}

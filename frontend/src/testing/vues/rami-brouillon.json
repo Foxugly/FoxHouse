@@ -1,0 +1,382 @@
+{
+  "schema": 1,
+  "jeu": "rami",
+  "version": 2,
+  "terminee": false,
+  "sieges": [
+    {
+      "id": 0,
+      "nom": "Toi",
+      "actif": true,
+      "compteurs": [
+        {
+          "libelle": "Cartes",
+          "valeur": 14
+        },
+        {
+          "libelle": "Pénalités",
+          "valeur": 0
+        }
+      ]
+    },
+    {
+      "id": 1,
+      "nom": "Ordinateur 1",
+      "actif": false,
+      "compteurs": [
+        {
+          "libelle": "Cartes",
+          "valeur": 13
+        },
+        {
+          "libelle": "Pénalités",
+          "valeur": 0
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "nom": "Ordinateur 2",
+      "actif": false,
+      "compteurs": [
+        {
+          "libelle": "Cartes",
+          "valeur": 13
+        },
+        {
+          "libelle": "Pénalités",
+          "valeur": 0
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "nom": "Ordinateur 3",
+      "actif": false,
+      "compteurs": [
+        {
+          "libelle": "Cartes",
+          "valeur": 13
+        },
+        {
+          "libelle": "Pénalités",
+          "valeur": 0
+        }
+      ]
+    }
+  ],
+  "zones": [
+    {
+      "id": "main-0",
+      "type": "main",
+      "siege": 0,
+      "libelle": "Ta main",
+      "cartes": [
+        {
+          "id": "2D-1",
+          "valeur": "2",
+          "enseigne": "D"
+        },
+        {
+          "id": "JS-2",
+          "valeur": "J",
+          "enseigne": "S"
+        },
+        {
+          "id": "AD-2",
+          "valeur": "A",
+          "enseigne": "D"
+        },
+        {
+          "id": "QH-1",
+          "valeur": "Q",
+          "enseigne": "H"
+        },
+        {
+          "id": "9D-2",
+          "valeur": "9",
+          "enseigne": "D"
+        },
+        {
+          "id": "JS-1",
+          "valeur": "J",
+          "enseigne": "S"
+        },
+        {
+          "id": "JK-3",
+          "joker": true
+        },
+        {
+          "id": "7D-2",
+          "valeur": "7",
+          "enseigne": "D"
+        },
+        {
+          "id": "5H-2",
+          "valeur": "5",
+          "enseigne": "H"
+        },
+        {
+          "id": "KC-2",
+          "valeur": "K",
+          "enseigne": "C"
+        },
+        {
+          "id": "AD-1",
+          "valeur": "A",
+          "enseigne": "D"
+        }
+      ],
+      "nombre": null,
+      "groupes": []
+    },
+    {
+      "id": "main-1",
+      "type": "main",
+      "siege": 1,
+      "libelle": "Ordinateur 1",
+      "cartes": [
+        {
+          "cachee": true
+        },
+        {
+          "cachee": true
+        },
+        {
+          "cachee": true
+        },
+        {
+          "cachee": true
+        },
+        {
+          "cachee": true
+        },
+        {
+          "cachee": true
+        },
+        {
+          "cachee": true
+        },
+        {
+          "cachee": true
+        },
+        {
+          "cachee": true
+        },
+        {
+          "cachee": true
+        },
+        {
+          "cachee": true
+        },
+        {
+          "cachee": true
+        },
+        {
+          "cachee": true
+        }
+      ],
+      "nombre": null,
+      "groupes": []
+    },
+    {
+      "id": "main-2",
+      "type": "main",
+      "siege": 2,
+      "libelle": "Ordinateur 2",
+      "cartes": [
+        {
+          "cachee": true
+        },
+        {
+          "cachee": true
+        },
+        {
+          "cachee": true
+        },
+        {
+          "cachee": true
+        },
+        {
+          "cachee": true
+        },
+        {
+          "cachee": true
+        },
+        {
+          "cachee": true
+        },
+        {
+          "cachee": true
+        },
+        {
+          "cachee": true
+        },
+        {
+          "cachee": true
+        },
+        {
+          "cachee": true
+        },
+        {
+          "cachee": true
+        },
+        {
+          "cachee": true
+        }
+      ],
+      "nombre": null,
+      "groupes": []
+    },
+    {
+      "id": "main-3",
+      "type": "main",
+      "siege": 3,
+      "libelle": "Ordinateur 3",
+      "cartes": [
+        {
+          "cachee": true
+        },
+        {
+          "cachee": true
+        },
+        {
+          "cachee": true
+        },
+        {
+          "cachee": true
+        },
+        {
+          "cachee": true
+        },
+        {
+          "cachee": true
+        },
+        {
+          "cachee": true
+        },
+        {
+          "cachee": true
+        },
+        {
+          "cachee": true
+        },
+        {
+          "cachee": true
+        },
+        {
+          "cachee": true
+        },
+        {
+          "cachee": true
+        },
+        {
+          "cachee": true
+        }
+      ],
+      "nombre": null,
+      "groupes": []
+    },
+    {
+      "id": "pioche",
+      "type": "pile",
+      "siege": null,
+      "libelle": "Pioche",
+      "cartes": [],
+      "nombre": 54,
+      "groupes": []
+    },
+    {
+      "id": "defausse",
+      "type": "pile",
+      "siege": null,
+      "libelle": "Défausse",
+      "cartes": [
+        {
+          "id": "9C-2",
+          "valeur": "9",
+          "enseigne": "C"
+        }
+      ],
+      "nombre": 1,
+      "groupes": []
+    },
+    {
+      "id": "table",
+      "type": "combinaisons",
+      "siege": null,
+      "libelle": "Table",
+      "cartes": [],
+      "nombre": null,
+      "groupes": [
+        {
+          "id": "b0",
+          "cartes": [
+            {
+              "id": "10H-1",
+              "valeur": "10",
+              "enseigne": "H"
+            },
+            {
+              "id": "10D-1",
+              "valeur": "10",
+              "enseigne": "D"
+            },
+            {
+              "id": "10C-1",
+              "valeur": "10",
+              "enseigne": "C"
+            }
+          ],
+          "provisoire": true,
+          "ciblable": false
+        }
+      ]
+    }
+  ],
+  "menu": [
+    {
+      "libelle": "Manche",
+      "valeur": "1 / 5"
+    },
+    {
+      "libelle": "Ouverture",
+      "valeur": "pas encore"
+    },
+    {
+      "libelle": "Points en attente",
+      "valeur": 30
+    }
+  ],
+  "actions": [
+    {
+      "id": "poser",
+      "libelle": "Poser la combinaison",
+      "cartes_min": 3,
+      "cartes_max": 13,
+      "cible": null
+    },
+    {
+      "id": "defausser",
+      "libelle": "Défausser",
+      "cartes_min": 1,
+      "cartes_max": 1,
+      "cible": null
+    },
+    {
+      "id": "valider_ouverture",
+      "libelle": "Valider l'ouverture",
+      "cartes_min": 0,
+      "cartes_max": 0,
+      "cible": null
+    },
+    {
+      "id": "annuler",
+      "libelle": "Annuler",
+      "cartes_min": 0,
+      "cartes_max": 0,
+      "cible": null
+    }
+  ],
+  "resultat": null
+}

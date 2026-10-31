@@ -1,0 +1,22 @@
+@for (p of placees(); track $index) {
+  <div
+    class="place"
+    [class.soulevee]="estSelectionnee(p.id)"
+    [style.left.px]="p.gauche"
+    [style.top.px]="p.haut"
+    [style.z-index]="p.z"
+    [attr.role]="selectionnable() && p.id ? 'button' : null"
+    [attr.tabindex]="selectionnable() && p.id ? 0 : null"
+    [attr.aria-pressed]="selectionnable() && p.id ? estSelectionnee(p.id) : null"
+    (click)="choisir(p.id)"
+    (keydown.enter)="choisir(p.id)"
+    (keydown.space)="$event.preventDefault(); choisir(p.id)"
+  >
+    <app-carte
+      [carte]="p.carte"
+      [largeur]="cw()"
+      [indexRenforce]="renforce()"
+      [selectionnee]="estSelectionnee(p.id)"
+    />
+  </div>
+}

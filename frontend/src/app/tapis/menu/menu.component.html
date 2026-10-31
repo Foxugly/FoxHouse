@@ -1,0 +1,30 @@
+@if (vue().menu.length) {
+  <dl class="lignes">
+    @for (ligne of vue().menu; track $index) {
+      <div class="ligne">
+        <dt>{{ ligne.libelle }}</dt>
+        <dd>{{ ligne.valeur ?? '—' }}</dd>
+      </div>
+    }
+  </dl>
+}
+@if (vue().actions.length) {
+  <div class="actions">
+    @for (action of vue().actions; track action.id) {
+      @let raison = raisonDesactivee(action);
+      <div class="action">
+        <button
+          type="button"
+          [disabled]="!activable(action)"
+          [attr.aria-describedby]="raison ? idRaison(action) : null"
+          (click)="agir.emit(action)"
+        >
+          {{ action.libelle }}
+        </button>
+        @if (raison) {
+          <span class="raison" [id]="idRaison(action)">{{ raison }}</span>
+        }
+      </div>
+    }
+  </div>
+}
