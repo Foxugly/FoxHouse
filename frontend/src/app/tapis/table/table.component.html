@@ -11,6 +11,7 @@
     [style.left.px]="p.x"
     [style.top.px]="p.y"
     [style.max-width.px]="p.largeurMax"
+    [style.z-index]="p.joueur ? 3 : 2"
   >
     <span class="nom">{{ p.siege.nom }}</span>
     @if (p.siege.compteurs.length) {
@@ -102,8 +103,8 @@
 
 @if (vue().resultat; as r) {
   <div class="voile">
-    <section class="resultat" role="dialog" aria-modal="false" aria-labelledby="titre-resultat">
-      <h2 id="titre-resultat">{{ r.titre }}</h2>
+    <section class="resultat" role="dialog" aria-modal="false" [attr.aria-labelledby]="idTitre">
+      <h2 [id]="idTitre">{{ r.titre }}</h2>
       <table>
         <thead>
           <tr>

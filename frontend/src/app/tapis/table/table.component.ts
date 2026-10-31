@@ -12,9 +12,14 @@ import {
 } from '@angular/core';
 import { Carte, Groupe, Siege, VueTable, Zone } from '../../core/vue';
 import { CarteComponent, RAPPORT_CARTE } from '../carte/carte.component';
-import { largeurCarte, positionsSieges } from '../disposition';
+import { largeurCarte, Point, positionsSieges } from '../disposition';
 import { MainComponent } from '../main/main.component';
 import { Selection } from '../selection';
+
+/** Le dos montré pour une pile dont la carte du dessus est cachée. */
+const DOS: Carte = { cachee: true };
+/** Numéro des instances, pour des id uniques dans la page. */
+let instances = 0;
 
 /** Taille supposée tant que la table n'est pas mesurée (tests, premier rendu). */
 const LARGEUR_DEFAUT = 800;
@@ -53,6 +58,37 @@ function largeurRangee(nb: number, cw: number, pas: number): number {
   return cw * (1 + pas * Math.max(0, nb - 1));
 }
 
+/** Hauteur d'un siège hors cartes : marge de la carte soulevée, nom, compteurs, espaces. */
+const HAUTEUR_HORS_CARTES = 16 + 44;
+/** Espace laissé entre la main du joueur et le siège voisin. */
+const MARGE_VOISIN = 8;
+
+/**
+ * Largeur de main du joueur (siège 0) qui ne passe pas sous ses voisins : quand un voisin est à
+ * la même hauteur, la main s'arrête avant son bloc. Sans voisin proche, pas de limite.
+ */
+function largeurEntreVoisins(
+  positions: Point[],
+  largeursMains: number[],
+  cw: number,
+  cwAutres: number,
+): number {
+  const n = positions.length;
+  if (n < 2) return Infinity;
+  const joueur = positions[0];
+  // Majorant : la main du joueur sur deux rangées.
+  const demiHauteurJoueur = (HAUTEUR_HORS_CARTES + cw * (RAPPORT_CARTE + 0.7)) / 2;
+  const demiHauteurVoisin = (HAUTEUR_HORS_CARTES + cwAutres * RAPPORT_CARTE) / 2;
+  let demiLargeur = Infinity;
+  for (const i of new Set([1, n - 1])) {
+    const voisin = positions[i];
+    if (Math.abs(voisin.y - joueur.y) >= demiHauteurJoueur + demiHauteurVoisin) continue;
+    const libre = Math.abs(voisin.x - joueur.x) - largeursMains[i] / 2 - MARGE_VOISIN;
+    demiLargeur = Math.min(demiLargeur, libre);
+  }
+  return 2 * demiLargeur;
+}
+
 @Component({
   selector: 'app-table',
   imports: [CarteComponent, MainComponent],
@@ -83,24 +119,29 @@ export class TableComponent {
     const l = this.largeur();
     const h = this.hauteur();
     const cw = this.cw();
+    const cwAutres = cw * ECHELLE_AUTRES;
     const n = sieges.length;
-    const positions = positionsSieges(n, l, h);
+    const positions = positionsSieges(n, l, h).map((p, i) =>
+      i === 0 ? { x: p.x, y: h / 2 + (p.y - h / 2) * REMONTEE_JOUEUR } : p,
+    );
+    const largeursMains = positions.map(({ x }) =>
+      Math.max(cwAutres, Math.min(l / (n * 0.55), 150, 2 * Math.min(x, l - x))),
+    );
+    largeursMains[0] = Math.max(
+      cw,
+      Math.min(0.7 * l, l - 40, largeurEntreVoisins(positions, largeursMains, cw, cwAutres)),
+    );
     return sieges.map((siege, i) => {
       const joueur = i === 0;
-      const x = positions[i].x;
-      const y = joueur ? h / 2 + (positions[i].y - h / 2) * REMONTEE_JOUEUR : positions[i].y;
-      const largeurMax = 2 * Math.min(x, l - x);
-      const cwSiege = joueur ? cw : cw * ECHELLE_AUTRES;
-      const largeurMain = Math.max(
-        cwSiege,
-        joueur ? Math.min(0.7 * l, l - 40) : Math.min(l / (n * 0.55), 150, largeurMax),
-      );
+      const { x, y } = positions[i];
+      const cwSiege = joueur ? cw : cwAutres;
+      const largeurMain = largeursMains[i];
       return {
         siege,
         x,
         y,
         joueur,
-        largeurMax,
+        largeurMax: 2 * Math.min(x, l - x),
         zones: zones
           .filter((z) => z.siege === siege.id)
           .map((zone) => ({
@@ -116,6 +157,7 @@ export class TableComponent {
   });
 
   protected readonly rapportCarte = RAPPORT_CARTE;
+  protected readonly idTitre = `titre-resultat-${++instances}`;
 
   protected readonly centre = computed(() => this.vue().zones.filter((z) => z.siege === null));
 
@@ -146,9 +188,7 @@ export class TableComponent {
 
   /** La carte du dessus d'une pile, un dos si elle est cachée, rien si la pile est vide. */
   protected dessus(zone: Zone): Carte | null {
-    const visible = zone.cartes.at(-1);
-    if (visible) return visible;
-    return zone.nombre === 0 ? null : { cachee: true };
+    return zone.cartes.at(-1) ?? ((zone.nombre ?? 0) > 0 ? DOS : null);
   }
 
   protected largeurGroupe(groupe: Groupe): number {

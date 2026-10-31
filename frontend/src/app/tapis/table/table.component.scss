@@ -19,8 +19,8 @@
 }
 
 .siege {
+  /* z-index posé dans le gabarit : le siège du joueur passe devant ses voisins. */
   position: absolute;
-  z-index: 2;
   display: flex;
   flex-direction: column;
   align-items: center;

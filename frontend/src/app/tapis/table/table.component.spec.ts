@@ -30,6 +30,45 @@ function vueAvecCible(): VueTable {
   return vue;
 }
 
+/** Une vue à 10 sièges de 13 cartes, construite à partir de la vue factice. */
+function vueDixSieges(): VueTable {
+  const vue = vueFactice();
+  const modele = vue.sieges[1];
+  vue.sieges = Array.from({ length: 10 }, (_, i) => ({
+    ...modele,
+    id: i,
+    nom: i === 0 ? 'Toi' : `Ordinateur ${i}`,
+    actif: i === 0,
+  }));
+  vue.zones = [
+    ...vue.sieges.map((s) => ({
+      id: `main-${s.id}`,
+      type: 'main' as const,
+      siege: s.id,
+      libelle: s.nom,
+      nombre: null,
+      cartes: Array.from({ length: 13 }, (_, k) =>
+        s.id === 0
+          ? { id: `${k + 1}S-1`, valeur: String(k + 1), enseigne: 'S' }
+          : { cachee: true as const },
+      ),
+      groupes: [],
+    })),
+    ...vue.zones.filter((z) => z.siege === null),
+  ];
+  vue.actions = [{ id: 'jouer', libelle: 'Jouer', cartes_min: 1, cartes_max: 1, cible: null }];
+  return vue;
+}
+
+/** Centre x du siège et largeur de sa main. */
+function mesures(f: ComponentFixture<TableComponent>, id: number) {
+  const el = siege(f, id);
+  return {
+    x: parseFloat(el.style.left),
+    main: parseFloat(el.querySelector<HTMLElement>('app-main')!.style.width),
+  };
+}
+
 describe('TableComponent', () => {
   it('rend 4 sièges et met en avant le siège actif', () => {
     const f = monter(vueDebut());
@@ -171,5 +210,65 @@ describe('TableComponent', () => {
   it('sans résultat, pas de panneau', () => {
     const f = monter(vueDebut());
     expect(racine(f).querySelector('.resultat')).toBeNull();
+  });
+
+  it('à 10 sièges, le siège du joueur passe devant ses voisins', () => {
+    const f = monter(vueDixSieges());
+    const z = tous(f, '.siege').map((el) => Number(el.style.zIndex));
+    expect(z).toHaveLength(10);
+    expect(z[0]).toBeGreaterThan(Math.max(...z.slice(1)));
+  });
+
+  it('à 10 sièges, la main du joueur ne passe pas sous ses voisins', () => {
+    const f = monter(vueDixSieges());
+    const joueur = mesures(f, 0);
+    expect(joueur.main).toBeLessThan(0.7 * 800);
+    for (const id of [1, 9]) {
+      const voisin = mesures(f, id);
+      expect(Math.abs(voisin.x - joueur.x) - voisin.main / 2).toBeGreaterThanOrEqual(
+        joueur.main / 2,
+      );
+    }
+  });
+
+  it('à 4 sièges, la main du joueur garde toute sa largeur', () => {
+    const f = monter(vueDebut());
+    expect(mesures(f, 0).main).toBeCloseTo(0.7 * 800);
+  });
+
+  it('Entrée sur un groupe ciblable le choisit', () => {
+    const f = monter(vueAvecCible());
+    const recus: (string | null)[] = [];
+    f.componentInstance.choisirCible.subscribe((id) => recus.push(id));
+    const g1 = racine(f).querySelector<HTMLElement>('.groupe[data-groupe="g1"]')!;
+    expect(g1.getAttribute('tabindex')).toBe('0');
+    g1.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+    expect(recus).toEqual(['g1']);
+  });
+
+  it('une pile vide, nombre 0 ou inconnu, montre un emplacement vide et pas un dos', () => {
+    for (const nombre of [0, null]) {
+      const vue = vueFactice();
+      vue.zones.push({
+        id: 'z-vide',
+        type: 'pile',
+        siege: null,
+        libelle: 'Vide',
+        nombre,
+        cartes: [],
+        groupes: [],
+      });
+      const f = monter(vue);
+      const zone = racine(f).querySelector('.zone[data-zone="z-vide"]')!;
+      expect(zone.querySelector('.vide')).not.toBeNull();
+      expect(zone.querySelector('.dos')).toBeNull();
+    }
+  });
+
+  it('le titre du résultat a un id propre à chaque table', () => {
+    const a = racine(monter(vueFinManche())).querySelector('h2')!;
+    const b = racine(monter(vueFinManche())).querySelector('h2')!;
+    expect(a.id).not.toBe(b.id);
+    expect(a.closest('[role="dialog"]')!.getAttribute('aria-labelledby')).toBe(a.id);
   });
 });
