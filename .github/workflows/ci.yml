@@ -24,12 +24,14 @@ jobs:
     # PostgreSQL n'est pas un `service` : un service se télécharge avant toute
     # étape, donc sans cache possible, et le registre refuse parfois (Docker Hub
     # le 2026-10-09, « Data limit exceeded » sur public.ecr.aws le 2026-10-11 —
-    # la CI échouait avant le moindre test). L'image vit dans le cache
-    # d'Actions : un téléchargement par mois au plus, avec trois tentatives, et
-    # l'image du mois précédent si le registre refuse encore.
+    # la CI échouait avant le moindre test ; encore le 2026-10-31). L'image vit
+    # dans le cache d'Actions : un téléchargement par mois au plus, trois
+    # tentatives sur le miroir AWS puis celui de Google, et l'image du mois
+    # précédent si les deux refusent encore.
     runs-on: ubuntu-latest
     env:
       POSTGRES_IMAGE: public.ecr.aws/docker/library/postgres:16  # miroir AWS de l'image officielle
+      POSTGRES_IMAGE_SECOURS: mirror.gcr.io/library/postgres:16  # miroir Google, si AWS refuse
       DB_ENGINE: postgresql
       DB_NAME: foxhouse
       DB_USER: foxhouse
@@ -60,11 +62,15 @@ jobs:
         if: steps.cache-postgres.outputs.cache-hit != 'true'
         run: |
           for essai in 1 2 3; do
-            if docker pull "$POSTGRES_IMAGE"; then
-              docker save "$POSTGRES_IMAGE" -o /tmp/postgres-16.tar
-              echo "neuve=true" >> "$GITHUB_OUTPUT"
-              exit 0
-            fi
+            for image in "$POSTGRES_IMAGE" "$POSTGRES_IMAGE_SECOURS"; do
+              if docker pull "$image"; then
+                # L'étape suivante démarre toujours $POSTGRES_IMAGE.
+                docker tag "$image" "$POSTGRES_IMAGE"
+                docker save "$POSTGRES_IMAGE" -o /tmp/postgres-16.tar
+                echo "neuve=true" >> "$GITHUB_OUTPUT"
+                exit 0
+              fi
+            done
             sleep $((essai * 20))
           done
           if [ -f /tmp/postgres-16.tar ]; then
