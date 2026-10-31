@@ -25,9 +25,12 @@ Référence de la flotte : `D:\Projects\PycharmProjects\foxChess`. Code, comment
     Aujourd'hui le siège 0 est l'humain qui crée la partie, les autres sont la machine ; le jeu entre
     humains n'aura qu'à remplir d'autres sièges humains ;
   - `joueur.py` : le joueur anonyme, un jeton aléatoire gardé dans la session (`foxhouse_joueur`) ;
+    la session dure `RETENTION_PARTIES_JOURS` (`SESSION_COOKIE_AGE`) et chaque requête la prolonge
+    (`SESSION_SAVE_EVERY_REQUEST`) ;
   - `deroulement.py` : `jouer` (coup d'un humain puis la machine), `avancer` (la machine joue tant que
     c'est le tour d'un siège machine, 2 000 coups au plus). Un coup refusé de la machine est un bug
-    (`RuntimeError` → 500, Sentry), jamais un 400 ;
+    (`RuntimeError` → 500, Sentry), jamais un 400. Un coup privé (le jeu rend un message `None`,
+    p. ex. le brouillon du rami) ne fait d'étape que pour son auteur, avec `Jeu.message_prive` ;
   - `views.py` / `urls.py` : l'API ; `retention.py` + `purger_parties` : la purge.
 - `accounts/` — utilisateur de la flotte (administrateurs seulement), `config/` — réglages, `/health/`.
 
@@ -52,8 +55,9 @@ Une étape vaut `{"message", "vue"}` : le tapis les rejoue avant d'afficher la v
 ## Ajouter un jeu
 
 1. Créer l'app (`manage.py startapp <jeu>`) ; ses règles n'importent pas Django.
-2. Implémenter `tapis.jeu.Jeu` : `options`, `nouvelle_partie`, `joueur_actif`, `appliquer` (sur une copie
-   de l'état, `CoupRefuse` pour un coup interdit), `vue` (conforme à `valider_vue`), `adversaire`.
+2. Implémenter `tapis.jeu.Jeu` : `options`, `nouvelle_partie` (graine de 128 bits), `joueur_actif`,
+   `appliquer` (sur une copie de l'état, `CoupRefuse` pour un coup interdit, message `None` pour un coup
+   privé, alors `message_prive` donne celui de son auteur), `vue` (conforme à `valider_vue`), `adversaire`.
 3. L'inscrire dans `ready()` de son `AppConfig` (`registre.inscrire(MonJeu())`, comme `rami/apps.py`).
 4. L'ajouter à `INSTALLED_APPS` ; l'en retirer fait disparaître le jeu.
 5. Écrire son test de fuite (comme `rami/tests/test_vue.py::test_vue_ne_fuit_rien`) : sur des parties

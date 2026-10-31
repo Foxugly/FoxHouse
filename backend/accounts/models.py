@@ -1,6 +1,6 @@
 """Utilisateur de la flotte (OPERATIONS.md §3.16) : e-mail seul, pas de username.
 
-foxChess se joue sans compte : seuls les administrateurs en ont un.
+FoxHouse se joue sans compte : seuls les administrateurs en ont un.
 """
 
 from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager

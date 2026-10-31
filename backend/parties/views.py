@@ -57,7 +57,7 @@ class CorpsIllisible(Exception):
 def _corps(request) -> dict:
     try:
         donnees = json.loads(request.body)
-    except (ValueError, UnicodeDecodeError):
+    except (ValueError, UnicodeDecodeError, RecursionError):  # RecursionError : trop imbriqué
         raise CorpsIllisible("Le corps de la requête n'est pas du JSON valide.") from None
     if not isinstance(donnees, dict):
         raise CorpsIllisible("Le corps de la requête doit être un objet JSON.")
@@ -128,7 +128,8 @@ def creer(request):
 
     jeton = jeton_du_joueur(request, creer=True)
     sieges = [{"type": "humain", "joueur": jeton}] + [{"type": "machine"} for _ in range(nb - 1)]
-    etat = jeu.nouvelle_partie(options, nb, secrets.randbits(31))
+    # 128 bits : la graine ne peut pas être retrouvée par force brute depuis les cartes vues.
+    etat = jeu.nouvelle_partie(options, nb, secrets.randbits(128))
     etat, etapes = deroulement.avancer(jeu, etat, sieges, pour=0)
     with transaction.atomic():
         Partie.objects.filter(joueur=jeton).delete()

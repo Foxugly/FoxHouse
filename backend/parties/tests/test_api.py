@@ -1,5 +1,6 @@
 import json
 import logging
+from unittest import mock
 
 from django.test import Client, TestCase
 
@@ -152,6 +153,29 @@ class ApiTests(AvecFactice, TestCase):
             f"/api/parties/{pk}/actions/", "{", content_type="application/json"
         )
         self.assertEqual(reponse.status_code, 400)
+
+    def test_json_trop_imbrique_400(self):
+        corps = "[" * 100_000 + "]" * 100_000
+        for url in ("/api/parties/", f"/api/parties/{self.creer().json()['id']}/actions/"):
+            with self.subTest(url=url):
+                reponse = self.client.post(url, corps, content_type="application/json")
+                self.assertEqual(reponse.status_code, 400)
+                self.assertEqual(
+                    reponse.json()["erreur"], "Le corps de la requête n'est pas du JSON valide."
+                )
+
+    def test_graine_de_128_bits(self):
+        graine = (1 << 128) - 1
+        with mock.patch("parties.views.secrets.randbits", return_value=graine) as tirage:
+            reponse = self.creer(jeu="rami")
+        tirage.assert_called_once_with(128)
+        self.assertEqual(reponse.status_code, 201)
+        pk = reponse.json()["id"]
+        self.assertEqual(Partie.objects.get(pk=pk).etat["graine"], graine)
+        reponse = self.agir(pk, 0, action="piocher")
+        self.assertEqual(reponse.status_code, 200, reponse.content)
+        self.assertEqual(Partie.objects.get(pk=pk).etat["graine"], graine)
+        self.assertNotIn(str(graine), reponse.content.decode())
 
     def test_version_manquante_400(self):
         pk = self.creer().json()["id"]

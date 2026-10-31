@@ -32,7 +32,11 @@ def _exiger_cartes_en_main(etat: dict, j: int, cartes: list[str]) -> None:
 
 
 def _defausser(etat: dict, j: int, carte: str) -> str:
-    """Se défausser sans avoir validé l'ouverture rend d'abord le brouillon à la main."""
+    """Se défausser sans avoir validé l'ouverture rend d'abord le brouillon à la main.
+
+    Cette annulation ne fait pas de message à part : seul le message public de la
+    défausse est rendu, et le brouillon reste privé.
+    """
     if etat["brouillon"]:
         poses.annuler(etat, j)
     main = etat["mains"][j]
@@ -51,8 +55,11 @@ def _piocher(etat: dict, j: int) -> str:
 def _rendre_defausse(etat: dict, j: int) -> str:
     """Avec « carte de la défausse à poser » : remet la carte prise et repasse à la pioche.
 
-    Dans ce même tour, la défausse ne peut plus être reprise.
+    Dans ce même tour, la défausse ne peut plus être reprise. Refusé tant que le joker
+    récupéré est en main : il passerait au tour suivant, où la table pourrait ne plus
+    l'accepter.
     """
+    poses.exiger_joker_rejoue(etat, j, [])
     if etat["brouillon"]:
         poses.annuler(etat, j)
     prise = etat["prise"]
@@ -89,7 +96,17 @@ class Rami(Jeu):
     def actions_permises(self, etat, j: int) -> list[dict]:
         return vue_rami.actions_permises(etat, j)
 
-    def appliquer(self, etat, joueur: int, coup) -> tuple[dict, str]:
+    def appliquer(self, etat, joueur: int, coup) -> tuple[dict, str | None]:
+        """Le brouillon est privé (spec §6.4) : le mettre en attente ou l'annuler rend None."""
+        etat, message, prive = self._jouer(etat, joueur, coup)
+        return etat, None if prive else message
+
+    def message_prive(self, etat, joueur: int, coup) -> str:
+        """Rejoue le coup privé pour retrouver le message de son auteur."""
+        return self._jouer(etat, joueur, coup)[1]
+
+    def _jouer(self, etat, joueur: int, coup) -> tuple[dict, str, bool]:
+        """Nouvel état, message de l'auteur et « coup privé » ; ne modifie pas `etat`."""
         coup = normaliser_coup(coup)
         etat = copy.deepcopy(etat)
         action = next(
@@ -104,16 +121,19 @@ class Rami(Jeu):
         if action["cible"] == "groupe" and not any(g["id"] == cible for g in etat["table"]):
             raise CoupRefuse("Combinaison introuvable.")
 
+        prive = False
         match action["id"]:
             case "piocher":
                 message = _piocher(etat, joueur)
             case "prendre_defausse":
                 message = manche.prendre_defausse(etat, joueur)
             case "poser":
+                prive = not etat["ouvert"][joueur]  # avant l'ouverture : dans le brouillon
                 message = poses.poser(etat, joueur, cartes)
             case "valider_ouverture":
                 message = poses.valider_ouverture(etat, joueur)
             case "annuler":
+                prive = True
                 message = poses.annuler(etat, joueur)
             case "ajouter":
                 message = poses.ajouter_a(etat, joueur, cartes, cible)
@@ -127,7 +147,7 @@ class Rami(Jeu):
                 message = _manche_suivante(etat)
             case _:
                 raise CoupRefuse("Action impossible maintenant.")
-        return etat, message
+        return etat, message, prive
 
     def vue(self, etat, joueur: int) -> dict:
         return vue_rami.vue(etat, joueur)

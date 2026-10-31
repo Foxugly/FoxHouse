@@ -42,8 +42,20 @@ class Jeu(ABC):
         """None = partie terminée."""
 
     @abstractmethod
-    def appliquer(self, etat, joueur: int, coup: dict) -> tuple[dict, str]:
-        """Nouvel état et message public, ou CoupRefuse. Ne modifie pas `etat`."""
+    def appliquer(self, etat, joueur: int, coup: dict) -> tuple[dict, str | None]:
+        """Nouvel état et message public, ou CoupRefuse. Ne modifie pas `etat`.
+
+        Le message vaut None pour un coup privé, que les autres joueurs ne doivent pas voir
+        (un brouillon de tour, spec §6.4) : il n'est alors rejoué comme étape que pour son
+        auteur, avec `message_prive`.
+        """
+
+    def message_prive(self, etat, joueur: int, coup: dict) -> str:
+        """Message de l'étape montrée au seul auteur d'un coup privé.
+
+        `etat` est l'état d'avant le coup, que `appliquer` a accepté en rendant None.
+        """
+        return "Coup joué."
 
     @abstractmethod
     def vue(self, etat, joueur: int) -> dict: ...

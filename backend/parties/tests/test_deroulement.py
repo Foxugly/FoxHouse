@@ -2,6 +2,8 @@ from django.test import SimpleTestCase
 
 from parties import deroulement
 from parties.tests.jeu_factice import Retourner
+from rami.jeu import Rami
+from rami.tests.test_jeu import SUITE, etat_jouer, partie
 from tapis.jeu import CoupRefuse
 
 HUMAIN_MACHINE = [{"type": "humain", "joueur": "a" * 32}, {"type": "machine"}]
@@ -17,6 +19,22 @@ class SansFin(Retourner):
 
     def appliquer(self, etat, joueur, coup):
         return etat, "Encore."
+
+
+class Discret(Retourner):
+    """Tous les coups sont privés : `appliquer` ne rend pas de message."""
+
+    def appliquer(self, etat, joueur, coup):
+        etat, _ = super().appliquer(etat, joueur, coup)
+        return etat, None
+
+    def message_prive(self, etat, joueur, coup):
+        return "Tu retournes une carte en secret."
+
+
+class SansFinDiscret(SansFin):
+    def appliquer(self, etat, joueur, coup):
+        return etat, None
 
 
 class AdversaireTricheur(Retourner):
@@ -78,3 +96,57 @@ class DeroulementTests(SimpleTestCase):
         etat = dict(self.etat, coups=6)
         with self.assertRaisesMessage(CoupRefuse, "La partie est terminée."):
             deroulement.jouer(self.jeu, etat, HUMAIN_MACHINE, 0, {"action": "retourner"})
+
+    def test_coup_prive_de_la_machine_sans_etape(self):
+        # Ni le message ni l'existence d'un coup privé n'atteignent les autres joueurs.
+        etat, etapes = deroulement.jouer(
+            Discret(), self.etat, HUMAIN_MACHINE, 0, {"action": "retourner"}
+        )
+        self.assertEqual([e["message"] for e in etapes], ["Tu retournes une carte en secret."])
+        self.assertEqual(etat["coups"], 2)  # la machine a bien joué
+        self.assertEqual(etapes[0]["vue"]["zones"][1]["cartes"][0]["id"], "3S-1")
+
+    def test_message_prive_par_defaut(self):
+        class SansMessagePrive(Discret):
+            message_prive = Retourner.message_prive
+
+        _, etapes = deroulement.jouer(
+            SansMessagePrive(), self.etat, DEUX_HUMAINS, 0, {"action": "retourner"}
+        )
+        self.assertEqual(etapes[0]["message"], "Coup joué.")
+
+    def test_avancer_borne_aussi_les_coups_prives(self):
+        with self.assertRaises(RuntimeError):
+            deroulement.avancer(SansFinDiscret(), self.etat, HUMAIN_MACHINE, pour=0)
+
+
+class BrouillonRamiTests(SimpleTestCase):
+    def test_brouillon_de_la_machine_jamais_rejoue(self):
+        rami = Rami()
+        for graine in range(1, 6):
+            with self.subTest(graine=graine):
+                e = partie(nb=3, graine=graine, manches=1)
+                # La même partie, coup par coup : combien de coups publics, combien de privés ?
+                publics = prives = 0
+                rejouee = e
+                while (j := rami.joueur_actif(rejouee)) is not None:
+                    rejouee, message = rami.appliquer(rejouee, j, rami.adversaire(rejouee, j))
+                    publics, prives = publics + (message is not None), prives + (message is None)
+                self.assertGreater(prives, 0, "aucun brouillon : le test ne prouve rien")
+                sieges = [{"type": "machine"}] * 3
+                fin, etapes = deroulement.avancer(rami, e, sieges, pour=0)
+                self.assertEqual(fin, rejouee)
+                self.assertEqual(len(etapes), publics)
+                for etape in etapes:
+                    self.assertNotIn("attente", etape["message"])
+                    self.assertNotIn("reprend", etape["message"])
+
+    def test_le_brouillon_de_l_humain_fait_son_etape(self):
+        e = etat_jouer(SUITE + ["2S-2", "3D-1"])
+        etat, etapes = deroulement.jouer(
+            Rami(), e, HUMAIN_MACHINE, 0, {"action": "poser", "cartes": SUITE}
+        )
+        self.assertEqual([x["message"] for x in etapes], ["Tu mets une suite en attente."])
+        self.assertEqual(len(etat["brouillon"]), 1)
+        etat, etapes = deroulement.jouer(Rami(), etat, HUMAIN_MACHINE, 0, {"action": "annuler"})
+        self.assertEqual([x["message"] for x in etapes], ["Tu reprends les cartes en attente."])

@@ -157,6 +157,11 @@ CSRF_FAILURE_VIEW = "parties.views.echec_csrf"
 # Parties anonymes sans activité : effacées après ce délai (RGPD, OPERATIONS.md
 # §3.25).
 RETENTION_PARTIES_JOURS = 30
+# La session porte le jeton du joueur anonyme : elle doit vivre au moins aussi longtemps
+# que ses parties, et chaque requête la prolonge (sinon elle expirerait 30 jours après la
+# création du jeton, même pour un joueur assidu).
+SESSION_COOKIE_AGE = RETENTION_PARTIES_JOURS * 24 * 3600
+SESSION_SAVE_EVERY_REQUEST = True
 
 
 # Tests : hachage de mot de passe rapide, limité à `manage.py test`.

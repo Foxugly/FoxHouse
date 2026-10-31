@@ -46,6 +46,18 @@ def _exiger_une_carte_gardee(etat: dict, j: int, cartes: list[str]) -> None:
         raise CoupRefuse("Garde une carte pour la défausse.")
 
 
+def exiger_joker_rejoue(etat: dict, j: int, cartes: list[str]) -> None:
+    """Tant que le joker récupéré est en main, seule une pose qui le rejoue est permise.
+
+    La récupération n'est acceptée que si ce joker peut être ajouté à la table
+    (`_joker_rejouable`) ; un autre coup pourrait remplir les groupes qui l'accueillaient,
+    et le joueur, qui ne peut pas le défausser, resterait bloqué.
+    """
+    joker = etat["joker_recupere"]
+    if joker is not None and joker in etat["mains"][j] and joker not in cartes:
+        raise CoupRefuse("Rejoue d'abord le joker récupéré.")
+
+
 def _retirer_de_la_main(etat: dict, j: int, cartes: list[str]) -> None:
     main = etat["mains"][j]
     for c in cartes:
@@ -79,6 +91,7 @@ def poser(etat: dict, j: int, cartes: list[str]) -> str:
     """Pose une combinaison : dans le brouillon avant l'ouverture, sur la table après."""
     _exiger_phase(etat)
     _exiger_en_main(etat, j, cartes)
+    exiger_joker_rejoue(etat, j, cartes)
     comb = analyser(cartes)
     if comb is None:
         raise CoupRefuse("Ces cartes ne forment pas une combinaison.")
@@ -131,6 +144,7 @@ def ajouter_a(etat: dict, j: int, cartes: list[str], groupe_id) -> str:
     _exiger_phase(etat)
     _exiger_en_main(etat, j, cartes)
     _exiger_ouvert(etat, j)
+    exiger_joker_rejoue(etat, j, cartes)
     groupe = _groupe(etat, groupe_id)
     comb = ajouter(depuis_dict(groupe), cartes)
     if comb is None:

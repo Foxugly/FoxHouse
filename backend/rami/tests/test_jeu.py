@@ -1,4 +1,5 @@
 import copy
+import json
 
 from django.test import SimpleTestCase
 
@@ -188,6 +189,95 @@ class AppliquerTests(SimpleTestCase):
         e, _ = rami.appliquer(e, 0, {"action": "ajouter", "cartes": ["JK-1"], "cible": "g1"})
         e, _ = rami.appliquer(e, 0, {"action": "defausser", "cartes": ["2S-2"]})
         self.assertEqual(e["actif"], 1)
+
+    def test_joker_recupere_a_rejouer_d_abord(self):
+        # Sans la règle, ajouter 10H puis 3C laissait la main [JK] : défausse refusée, ajout
+        # refusé (garder une carte), le joueur était bloqué pour toujours.
+        rami = Rami()
+        e = etat_ouvert(["5S-2", "10H-1", "3C-1"])
+        retirer_ailleurs(e, ["3S-1", "3H-1", "3D-1"])
+        e["table"].append(
+            {"id": "g3", "auteur": 1, "type": "brelan", "cartes": ["3S-1", "3H-1", "3D-1"],
+             "jokers": {}}
+        )
+        e, _ = rami.appliquer(e, 0, {"action": "recuperer_joker", "cartes": ["5S-2"], "cible": "g2"})
+        for coup in (
+            {"action": "ajouter", "cartes": ["10H-1"], "cible": "g1"},
+            {"action": "ajouter", "cartes": ["3C-1"], "cible": "g3"},
+            {"action": "defausser", "cartes": ["3C-1"]},
+        ):
+            with self.subTest(coup=coup), self.assertRaises(CoupRefuse):
+                rami.appliquer(e, 0, coup)
+        with self.assertRaisesMessage(CoupRefuse, "Rejoue d'abord le joker récupéré."):
+            rami.appliquer(e, 0, {"action": "ajouter", "cartes": ["10H-1"], "cible": "g1"})
+        # Le joker, seul ou avec d'autres cartes, peut être rejoué ; ensuite tout redevient permis.
+        rami.appliquer(e, 0, {"action": "ajouter", "cartes": ["10H-1", "JK-1"], "cible": "g1"})
+        e, _ = rami.appliquer(e, 0, {"action": "ajouter", "cartes": ["JK-1"], "cible": "g1"})
+        e, _ = rami.appliquer(e, 0, {"action": "ajouter", "cartes": ["3C-1"], "cible": "g3"})
+        e, _ = rami.appliquer(e, 0, {"action": "defausser", "cartes": ["10H-1"]})
+        self.assertEqual((e["phase"], e["penalites"][-1][0]), ("fin_manche", 0))  # gagnée
+
+    def test_joker_recupere_rejoue_par_une_pose(self):
+        rami = Rami()
+        e = etat_ouvert(["5S-2", "QD-1", "KD-1", "2C-1"])
+        e, _ = rami.appliquer(e, 0, {"action": "recuperer_joker", "cartes": ["5S-2"], "cible": "g2"})
+        e, message = rami.appliquer(e, 0, {"action": "poser", "cartes": ["QD-1", "KD-1", "JK-1"]})
+        self.assertEqual(message, "Tu poses une suite.")
+        self.assertNotIn("JK-1", e["mains"][0])
+
+    def test_rendre_defausse_refusee_avec_le_joker_recupere(self):
+        # Le joker passerait au tour suivant, où la table pourrait ne plus l'accepter.
+        rami = Rami()
+        e = etat_ouvert(["5S-2", "2C-1"], defausse_a_poser=True)
+        retirer_ailleurs(e, ["4D-1"])
+        e["defausse"] = ["4D-1"]
+        e["phase"] = "piocher"
+        e, _ = rami.appliquer(e, 0, {"action": "prendre_defausse"})
+        e, _ = rami.appliquer(e, 0, {"action": "recuperer_joker", "cartes": ["5S-2"], "cible": "g2"})
+        with self.assertRaisesMessage(CoupRefuse, "Rejoue d'abord le joker récupéré."):
+            rami.appliquer(e, 0, {"action": "rendre_defausse"})
+        e, _ = rami.appliquer(e, 0, {"action": "ajouter", "cartes": ["JK-1"], "cible": "g1"})
+        e, _ = rami.appliquer(e, 0, {"action": "rendre_defausse"})
+        self.assertEqual(e["phase"], "piocher")
+
+    def test_brouillon_prive(self):
+        # Mettre en attente ou annuler ne fait pas de message public (spec §6.4) ; l'auteur
+        # retrouve le sien avec message_prive.
+        rami = Rami()
+        e = etat_jouer(SUITE + ["2S-2", "3D-1"])
+        coup = {"action": "poser", "cartes": SUITE}
+        e2, message = rami.appliquer(e, 0, coup)
+        self.assertIsNone(message)
+        self.assertEqual(rami.message_prive(e, 0, coup), "Tu mets une suite en attente.")
+        e3, message = rami.appliquer(e2, 0, {"action": "annuler"})
+        self.assertIsNone(message)
+        self.assertEqual(
+            rami.message_prive(e2, 0, {"action": "annuler"}), "Tu reprends les cartes en attente."
+        )
+        e4, _ = rami.appliquer(e2, 0, {"action": "defausser", "cartes": ["2S-2"]})
+        self.assertEqual(e4["brouillon"], [])
+        # Après l'ouverture, la pose va sur la table : elle est publique.
+        e = etat_ouvert(SUITE + ["2S-2", "3D-1"])
+        retirer_ailleurs(e, ["10D-1", "JD-1", "QD-1"])
+        e["mains"][0] += ["10D-1", "JD-1", "QD-1"]
+        _, message = rami.appliquer(e, 0, {"action": "poser", "cartes": ["10D-1", "JD-1", "QD-1"]})
+        self.assertEqual(message, "Tu poses une suite.")
+
+    def test_graine_de_128_bits(self):
+        # Graine des distributions et des reconstitutions de la pioche : un grand entier,
+        # gardé tel quel dans le JSON de l'état.
+        rami = Rami()
+        graine = (1 << 128) - 1
+        e = partie(graine=graine, manches=2)
+        self.assertEqual(json.loads(json.dumps(e)), e)
+        coups = 0
+        while (j := rami.joueur_actif(e)) is not None:
+            e, _ = rami.appliquer(e, j, rami.adversaire(e, j))
+            coups += 1
+            self.assertLess(coups, 5000)
+        self.assertEqual(e["graine"], graine)
+        self.assertEqual(len(e["penalites"]), 2)
+        self.assertNotEqual(partie(graine=graine)["mains"], partie(graine=graine - 1)["mains"])
 
     def test_defausse_a_poser(self):
         rami = Rami()

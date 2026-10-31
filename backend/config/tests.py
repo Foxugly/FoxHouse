@@ -15,3 +15,10 @@ class ReglagesTests(SimpleTestCase):
         self.assertEqual(settings.CSRF_COOKIE_NAME, "XSRF-TOKEN")
         self.assertEqual(settings.CSRF_HEADER_NAME, "HTTP_X_XSRF_TOKEN")
         self.assertFalse(settings.CSRF_COOKIE_HTTPONLY)
+
+    def test_la_session_dure_autant_que_les_parties(self):
+        # La session porte le jeton du joueur : elle ne doit pas expirer avant ses parties,
+        # et chaque requête la prolonge.
+        self.assertEqual(settings.SESSION_COOKIE_AGE, settings.RETENTION_PARTIES_JOURS * 24 * 3600)
+        self.assertEqual(settings.SESSION_COOKIE_AGE, 30 * 24 * 3600)
+        self.assertTrue(settings.SESSION_SAVE_EVERY_REQUEST)
