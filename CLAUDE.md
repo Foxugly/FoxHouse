@@ -1,10 +1,10 @@
 # CLAUDE.md
 
 FoxHouse : site de jeux de cartes contre l'ordinateur, de la flotte Foxugly. La v1 ne livre que le rami 51.
-Django (API JSON) dans `backend/`, Angular à venir. Conception : `docs/superpowers/specs/2026-10-31-foxhouse-design.md`.
+Django (API JSON) dans `backend/`, Angular 21 dans `frontend/`. Conception : `docs/superpowers/specs/2026-10-31-foxhouse-design.md`.
 Référence de la flotte : `D:\Projects\PycharmProjects\foxChess`. Code, commentaires et messages en français.
 
-## Commandes (depuis `backend/`, PowerShell, `$env:DJANGO_DEBUG="True"`)
+## Commandes backend (depuis `backend/`, PowerShell, `$env:DJANGO_DEBUG="True"`)
 
 - Tests : `.\.venv\Scripts\python.exe manage.py test` (≈ 40 s : le rami rejoue 200 parties complètes)
 - Lint : `.\.venv\Scripts\python.exe -m ruff check .`
@@ -51,6 +51,42 @@ Une étape vaut `{"message", "vue"}` : le tapis les rejoue avant d'afficher la v
 - Une partie d'un autre joueur, inconnue ou d'un jeu retiré répond **404**, jamais 403.
 - Chaque action est jouée sous `transaction.atomic()` + `select_for_update()`.
 - `vue.version` vaut toujours `Partie.version`. JSON illisible → 400 ; mauvaise méthode → 405.
+
+## Frontend (`frontend/`, Angular 21, Node 24)
+
+Commandes (depuis `frontend/`) : `npm ci`, `npm run lint`, `npm test` (Vitest, une passe),
+`npm run build`, `npm run format` (Prettier).
+
+Développement local, deux terminaux :
+
+1. `backend/` : `$env:DJANGO_DEBUG="True"`, `manage.py migrate` puis `manage.py runserver` (port 8000) ;
+2. `frontend/` : `npm start` → http://localhost:4200. `proxy.conf.json` renvoie `/api` et `/health`
+   vers `127.0.0.1:8000` avec `changeOrigin: false` : Django voit alors `Host` et `Origin` égaux
+   à `localhost:4200` et le contrôle CSRF passe sans `CSRF_TRUSTED_ORIGINS`.
+
+Architecture (`src/app/`) :
+
+- `core/` — types de la vue (`vue.ts`, miroir du schéma `tapis/vue.py`), client de l'API
+  (`api.service.ts`, erreurs en `ErreurApi`), Sentry.
+- `tapis/` — la table, commune à tous les jeux : `table/` (sièges sur une ellipse, zones du centre,
+  panneau de résultat), `main/` (cartes superposées, une ou deux rangées), `carte/`, `menu/` (lignes
+  du menu et un bouton par action), `selection.ts` (cartes choisies et cible ; un bouton n'est actif
+  que si `cartes_min ≤ sélection ≤ cartes_max` et la cible demandée est choisie), `disposition.ts`
+  (calculs de placement, sans Angular).
+- `pages/` — `accueil` (formulaire généré depuis `GET jeux/`, reprise de la partie courante) et
+  `partie` (table + menu, envoi des actions, relecture des `etapes` avant la vue finale).
+- `src/testing/` — vues d'exemple (`vues.ts`) tirées du serveur, dont `factice.json`.
+
+Habillage : l'image d'une carte vient du jeton `HABILLAGE` (`tapis/habillage.ts`), par défaut
+`HABILLAGE_WEBISSO` (SVG copiés dans `public/cartes/webisso/`, aucune ressource externe). Un autre
+jeu de cartes = un autre `Habillage` fourni à la place, sans toucher la table.
+
+Règle : le frontend n'a aucune règle de jeu. Il affiche `vue` et renvoie `{version, action, cartes,
+cible}` ; les libellés viennent du serveur. Aucun mot propre à un jeu (« rami », « piocher »,
+« poser », « défausse », « brouillon ») dans `src/app/tapis`, `src/app/core` ni `src/app/pages` :
+`tapis/genericite.spec.ts` le vérifie et rend la vue du jeu factice. Seules les données de
+`src/testing/` peuvent les contenir. Thème clair/sombre par `prefers-color-scheme` (variables CSS),
+écran de 360 px minimum sans défilement horizontal. Captures : `docs/captures/`.
 
 ## Ajouter un jeu
 

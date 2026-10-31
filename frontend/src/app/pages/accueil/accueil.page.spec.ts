@@ -140,6 +140,24 @@ describe('AccueilPage', () => {
     expect(naviguer).toHaveBeenCalledWith(['/partie'], { state: { partie } });
   });
 
+  it('une partie créée après avoir quitté la page ne navigue pas', () => {
+    const f = monter([jeuSansOption()]);
+    commencer(f).click();
+    const requete = http.expectOne('/api/parties/');
+    f.destroy();
+    expect(requete.cancelled).toBe(true);
+  });
+
+  it("les GET de l'accueil sont abandonnés quand la page est quittée", () => {
+    const f = TestBed.createComponent(AccueilPage);
+    f.detectChanges();
+    const jeux = http.expectOne('/api/jeux/');
+    const courante = http.expectOne('/api/parties/courante/');
+    f.destroy();
+    expect(jeux.cancelled).toBe(true);
+    expect(courante.cancelled).toBe(true);
+  });
+
   it("n'envoie qu'un seul POST pour deux clics pendant la requête", () => {
     const f = monter([jeuSansOption()]);
     commencer(f).click();

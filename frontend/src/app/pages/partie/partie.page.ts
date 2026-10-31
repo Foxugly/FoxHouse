@@ -7,6 +7,7 @@ import {
   inject,
   signal,
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { ApiService, ErreurApi, PartieCreee, ResultatCoup } from '../../core/api.service';
 import { Action, VueTable } from '../../core/vue';
@@ -36,6 +37,8 @@ function partieRecue(valeur: unknown): PartieCreee | null {
 export class PartiePage {
   private readonly api = inject(ApiService);
   private readonly router = inject(Router);
+  /** Une réponse arrivée après la sortie de la page ne navigue pas et ne relance rien. */
+  private readonly destroyRef = inject(DestroyRef);
 
   private id: string | null = null;
   /** La dernière vue reçue du serveur : sa version part avec chaque action. */
@@ -55,7 +58,7 @@ export class PartiePage {
   protected readonly bloque = computed(() => this.occupe() || this.relecture.enCours());
 
   constructor() {
-    inject(DestroyRef).onDestroy(() => this.relecture.arreter());
+    this.destroyRef.onDestroy(() => this.relecture.arreter());
     const partie = partieRecue(prendreEtatNavigation(inject(Location), 'partie'));
     if (partie) {
       this.id = partie.id;
@@ -67,18 +70,21 @@ export class PartiePage {
   }
 
   private charger(): void {
-    this.api.courante().subscribe({
-      next: (partie) => {
-        if (!partie) return this.quitterSansPartie();
-        this.id = partie.id;
-        this.vue.set(partie.vue);
-      },
-      error: (e: unknown) => {
-        if (!(e instanceof ErreurApi)) throw e;
-        if (e.statut === 404) return this.quitterSansPartie();
-        this.erreur.set(e.message);
-      },
-    });
+    this.api
+      .courante()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (partie) => {
+          if (!partie) return this.quitterSansPartie();
+          this.id = partie.id;
+          this.vue.set(partie.vue);
+        },
+        error: (e: unknown) => {
+          if (!(e instanceof ErreurApi)) throw e;
+          if (e.statut === 404) return this.quitterSansPartie();
+          this.erreur.set(e.message);
+        },
+      });
   }
 
   private quitterSansPartie(): void {
@@ -91,22 +97,25 @@ export class PartiePage {
     const { cartes, cible } = this.selection();
     this.occupe.set(true);
     this.erreur.set(null);
-    this.api.agir(this.id, { version: vue.version, action: action.id, cartes, cible }).subscribe({
-      next: (r: ResultatCoup) => {
-        this.apresReponse(r.vue);
-        this.relecture.lancer(r.etapes);
-      },
-      error: (e: unknown) => {
-        if (!(e instanceof ErreurApi)) {
-          this.apresReponse(null);
-          throw e;
-        }
-        if (e.statut === 404) return this.quitterSansPartie();
-        this.apresReponse(e.vue ?? null);
-        // 409 : la vue était périmée, la nouvelle suffit.
-        if (e.statut !== 409) this.erreur.set(e.message);
-      },
-    });
+    this.api
+      .agir(this.id, { version: vue.version, action: action.id, cartes, cible })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (r: ResultatCoup) => {
+          this.apresReponse(r.vue);
+          this.relecture.lancer(r.etapes);
+        },
+        error: (e: unknown) => {
+          if (!(e instanceof ErreurApi)) {
+            this.apresReponse(null);
+            throw e;
+          }
+          if (e.statut === 404) return this.quitterSansPartie();
+          this.apresReponse(e.vue ?? null);
+          // 409 : la vue était périmée, la nouvelle suffit.
+          if (e.statut !== 409) this.erreur.set(e.message);
+        },
+      });
   }
 
   private apresReponse(vue: VueTable | null): void {

@@ -76,21 +76,20 @@
   gap: 6px;
 }
 
-/* Les zones partagées, au centre du tapis, dans l'ordre reçu. */
+/* Les zones partagées, au centre du tapis, dans l'ordre reçu ; le cadre est calculé. */
 .centre {
   position: absolute;
-  top: 47%;
-  left: 50%;
   z-index: 1;
+  box-sizing: border-box;
   display: flex;
   flex-wrap: wrap;
   gap: 14px;
   align-items: center;
   justify-content: center;
-  width: 56%;
-  max-height: 46%;
   overflow-y: auto;
   padding-top: 10px;
+  scrollbar-color: rgb(255 255 255 / 35%) transparent;
+  scrollbar-width: thin;
   transform: translate(-50%, -50%);
 }
 

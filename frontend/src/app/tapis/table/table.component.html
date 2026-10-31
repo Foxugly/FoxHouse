@@ -46,7 +46,14 @@
   </section>
 }
 
-<div class="centre">
+@let cadre = cadreCentre();
+<div
+  class="centre"
+  [style.left.px]="(cadre.gauche + cadre.droite) / 2"
+  [style.top.px]="(cadre.haut + cadre.bas) / 2"
+  [style.width.px]="cadre.droite - cadre.gauche"
+  [style.max-height.px]="cadre.bas - cadre.haut"
+>
   @for (zone of centre(); track zone.id) {
     <section class="zone" [class]="'type-' + zone.type" [attr.data-zone]="zone.id">
       <span class="libelle">{{ zone.libelle }}</span>

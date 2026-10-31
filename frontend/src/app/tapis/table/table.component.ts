@@ -12,7 +12,14 @@ import {
 } from '@angular/core';
 import { Carte, Groupe, Siege, VueTable, Zone } from '../../core/vue';
 import { CarteComponent, RAPPORT_CARTE } from '../carte/carte.component';
-import { largeurCarte, Point, positionsSieges } from '../disposition';
+import {
+  Cadre,
+  largeurCarte,
+  pasCartes,
+  placerCentre,
+  Point,
+  positionsSieges,
+} from '../disposition';
 import { MainComponent } from '../main/main.component';
 import { Selection } from '../selection';
 
@@ -62,6 +69,32 @@ function largeurRangee(nb: number, cw: number, pas: number): number {
 const HAUTEUR_HORS_CARTES = 16 + 44;
 /** Espace laissé entre la main du joueur et le siège voisin. */
 const MARGE_VOISIN = 8;
+/** Largeur supposée du nom et des compteurs d'un siège. */
+const LARGEUR_ETIQUETTES = 100;
+/** Espace entre deux zones d'un même siège, marge de la carte soulevée comprise. */
+const ECART_ZONES = 20;
+
+/** Le rectangle qu'occupe un siège sur la table, estimé sans mesurer le rendu. */
+function cadreSiege(place: PlaceSiege): Cadre {
+  const largeur = Math.min(
+    place.largeurMax,
+    Math.max(LARGEUR_ETIQUETTES, ...place.zones.map((z) => z.largeur)),
+  );
+  const cartes = place.zones.map(({ zone, cw, largeur: dispo }) => {
+    const { rangees } = pasCartes(zone.cartes.length, cw, dispo);
+    return cw * (RAPPORT_CARTE + (rangees - 1) * 0.7);
+  });
+  const hauteur =
+    HAUTEUR_HORS_CARTES +
+    cartes.reduce((a, b) => a + b, 0) +
+    Math.max(0, cartes.length - 1) * ECART_ZONES;
+  return {
+    gauche: place.x - largeur / 2,
+    droite: place.x + largeur / 2,
+    haut: place.y - hauteur / 2,
+    bas: place.y + hauteur / 2,
+  };
+}
 
 /**
  * Largeur de main du joueur (siège 0) qui ne passe pas sous ses voisins : quand un voisin est à
@@ -160,6 +193,11 @@ export class TableComponent {
   protected readonly idTitre = `titre-resultat-${++instances}`;
 
   protected readonly centre = computed(() => this.vue().zones.filter((z) => z.siege === null));
+
+  /** Le cadre des zones du centre, à l'écart des sièges. */
+  protected readonly cadreCentre = computed(() =>
+    placerCentre(this.places().map(cadreSiege), this.largeur(), this.hauteur()),
+  );
 
   constructor() {
     const hote = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;

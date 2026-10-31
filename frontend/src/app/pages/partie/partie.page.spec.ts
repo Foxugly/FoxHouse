@@ -242,4 +242,18 @@ describe('PartiePage', () => {
     bouton('Quitter la partie')!.click();
     expect(naviguer).toHaveBeenCalledWith(['']);
   });
+  it('une réponse arrivée après avoir quitté la page est abandonnée', async () => {
+    await ouvrirEnDirect(vueFactice());
+    bouton('Retourner')!.click();
+    const requete = http.expectOne('/api/parties/p1/actions/');
+    await harness.navigateByUrl('/');
+    expect(requete.cancelled).toBe(true);
+  });
+
+  it('une partie courante arrivée après avoir quitté la page ne navigue pas', async () => {
+    await harness.navigateByUrl('/partie');
+    const requete = http.expectOne('/api/parties/courante/');
+    await harness.navigateByUrl('/');
+    expect(requete.cancelled).toBe(true);
+  });
 });

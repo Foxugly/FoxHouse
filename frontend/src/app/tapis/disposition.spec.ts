@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { indexRenforce, largeurCarte, pasCartes, positionsSieges } from './disposition';
+import {
+  Cadre,
+  indexRenforce,
+  largeurCarte,
+  pasCartes,
+  placerCentre,
+  positionsSieges,
+} from './disposition';
 
 describe('positionsSieges', () => {
   it('place le siège 0 en bas, le 1 à gauche et le 2 en haut (4 sièges)', () => {
@@ -58,5 +65,41 @@ describe('indexRenforce', () => {
   it('est vrai sous 0,6 fois la largeur de carte', () => {
     expect(indexRenforce(20, 50)).toBe(true);
     expect(indexRenforce(30, 50)).toBe(false);
+  });
+});
+
+describe('placerCentre', () => {
+  const chevauche = (a: Cadre, b: Cadre) =>
+    a.gauche < b.droite && b.gauche < a.droite && a.haut < b.bas && b.haut < a.bas;
+
+  it('sur une table large, garde la bande du milieu sans toucher les sièges', () => {
+    const sieges: Cadre[] = [
+      { gauche: 300, droite: 700, haut: 460, bas: 560 },
+      { gauche: 40, droite: 200, haut: 200, bas: 320 },
+      { gauche: 800, droite: 960, haut: 200, bas: 320 },
+    ];
+    const c = placerCentre(sieges, 1000, 600);
+    expect(c.droite - c.gauche).toBeGreaterThanOrEqual(400);
+    expect(c.bas - c.haut).toBeGreaterThan(200);
+    for (const s of sieges) expect(chevauche(c, s)).toBe(false);
+  });
+
+  it('sur une table étroite et haute, passe sous les sièges des côtés', () => {
+    // Mesures relevées sur un téléphone de 360 px, 3 sièges.
+    const sieges: Cadre[] = [
+      { gauche: 47, droite: 266, haut: 501, bas: 607 },
+      { gauche: 0, droite: 111, haut: 155, bas: 257 },
+      { gauche: 202, droite: 313, haut: 147, bas: 264 },
+    ];
+    const c = placerCentre(sieges, 313, 664);
+    expect(c.droite - c.gauche).toBeGreaterThan(200);
+    expect(c.bas - c.haut).toBeGreaterThan(150);
+    for (const s of sieges) expect(chevauche(c, s)).toBe(false);
+  });
+
+  it('un siège en haut au milieu repousse le centre vers le bas', () => {
+    const haut: Cadre = { gauche: 400, droite: 600, haut: 20, bas: 200 };
+    const c = placerCentre([haut], 1000, 600);
+    expect(c.haut).toBeGreaterThan(200);
   });
 });

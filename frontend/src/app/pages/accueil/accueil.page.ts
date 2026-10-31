@@ -3,10 +3,12 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  DestroyRef,
   inject,
   linkedSignal,
   signal,
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router, RouterLink } from '@angular/router';
 import { ApiService, ErreurApi } from '../../core/api.service';
 import { DescriptionJeu, DescriptionOption } from '../../core/vue';
@@ -43,6 +45,8 @@ export function entierBorne(option: DescriptionOption, saisie: string): number |
 export class AccueilPage {
   private readonly api = inject(ApiService);
   private readonly router = inject(Router);
+  /** Une réponse arrivée après la sortie de la page ne navigue pas. */
+  private readonly destroyRef = inject(DestroyRef);
 
   /** Le message laissé par la page précédente (« Aucune partie en cours. »). */
   protected readonly message = signal(
@@ -72,18 +76,24 @@ export class AccueilPage {
   protected readonly erreurChargement = signal<string | null>(null);
 
   constructor() {
-    this.api.jeux().subscribe({
-      next: (jeux) => this.jeux.set(jeux),
-      error: (e: unknown) => {
-        if (!(e instanceof ErreurApi)) throw e;
-        this.erreurChargement.set(e.message);
-      },
-    });
+    this.api
+      .jeux()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (jeux) => this.jeux.set(jeux),
+        error: (e: unknown) => {
+          if (!(e instanceof ErreurApi)) throw e;
+          this.erreurChargement.set(e.message);
+        },
+      });
     // Sans réponse, l'accueil propose seulement une nouvelle partie.
-    this.api.courante().subscribe({
-      next: (partie) => this.partieEnCours.set(partie !== null),
-      error: () => this.partieEnCours.set(false),
-    });
+    this.api
+      .courante()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (partie) => this.partieEnCours.set(partie !== null),
+        error: () => this.partieEnCours.set(false),
+      });
   }
 
   protected definir(code: string, valeur: unknown): void {
@@ -118,13 +128,16 @@ export class AccueilPage {
     if (this.envoi() || !jeu) return;
     this.envoi.set(true);
     this.erreur.set(null);
-    this.api.creer(jeu.code, this.nbJoueurs(), this.valeurs()).subscribe({
-      next: (partie) => void this.router.navigate(['/partie'], { state: { partie } }),
-      error: (e: unknown) => {
-        this.envoi.set(false);
-        if (!(e instanceof ErreurApi)) throw e;
-        this.erreur.set(e.message);
-      },
-    });
+    this.api
+      .creer(jeu.code, this.nbJoueurs(), this.valeurs())
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (partie) => void this.router.navigate(['/partie'], { state: { partie } }),
+        error: (e: unknown) => {
+          this.envoi.set(false);
+          if (!(e instanceof ErreurApi)) throw e;
+          this.erreur.set(e.message);
+        },
+      });
   }
 }
