@@ -95,6 +95,13 @@
   transform: translate(-50%, -50%);
 }
 
+/* Le pli d'un siège, entre lui et le centre ; devant le centre, derrière le siège du joueur. */
+.pli-siege {
+  position: absolute;
+  z-index: 2;
+  transform: translate(-50%, -50%);
+}
+
 .zone {
   position: relative;
   display: flex;

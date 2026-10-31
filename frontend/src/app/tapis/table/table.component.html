@@ -108,6 +108,19 @@
   }
 </div>
 
+@for (p of plis(); track p.zone.id) {
+  <div
+    class="pli-siege"
+    role="group"
+    [attr.data-zone]="p.zone.id"
+    [attr.aria-label]="p.zone.libelle"
+    [style.left.px]="p.x"
+    [style.top.px]="p.y"
+  >
+    <app-main [cartes]="p.zone.cartes" [largeurDispo]="largeurPli(p.zone)" [cw]="cwGroupe()" />
+  </div>
+}
+
 @if (vue().resultat; as r) {
   <div class="voile">
     <section class="resultat" role="dialog" aria-modal="false" [attr.aria-labelledby]="idTitre">

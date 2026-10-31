@@ -42,11 +42,19 @@ const ECHELLE_CENTRE = 0.9;
 const PAS_GROUPE = 0.45;
 /** Pas entre deux cartes d'une zone générique : côte à côte. */
 const PAS_LIGNE = 1.08;
+/** Le pli d'un siège se pose sur le segment qui va du centre de la table au siège, à cette part. */
+const PLI_VERS_SIEGE = 0.45;
 
 interface ZoneSiege {
   zone: Zone;
   cw: number;
   largeur: number;
+}
+
+interface PliSiege {
+  zone: Zone;
+  x: number;
+  y: number;
 }
 
 interface PlaceSiege {
@@ -257,7 +265,7 @@ export class TableComponent {
         joueur,
         largeurMax: 2 * Math.min(x, l - x),
         zones: zones
-          .filter((z) => z.siege === siege.id)
+          .filter((z) => z.siege === siege.id && z.type !== 'pli')
           .map((zone) => ({
             zone,
             cw: cwSiege,
@@ -268,6 +276,26 @@ export class TableComponent {
           })),
       };
     });
+  });
+
+  /**
+   * Les zones de type « pli » d'un siège (la carte qu'il vient de jouer) ne restent pas dans son
+   * bloc : elles se posent entre lui et le centre, comme sur une vraie table. Un pli vide ne
+   * montre rien.
+   */
+  protected readonly plis = computed<PliSiege[]>(() => {
+    const cx = this.largeur() / 2;
+    const cy = this.hauteur() / 2;
+    const zones = this.vue().zones;
+    return this.places().flatMap((p) =>
+      zones
+        .filter((z) => z.siege === p.siege.id && z.type === 'pli' && z.cartes.length)
+        .map((zone) => ({
+          zone,
+          x: cx + (p.x - cx) * PLI_VERS_SIEGE,
+          y: cy + (p.y - cy) * PLI_VERS_SIEGE,
+        })),
+    );
   });
 
   protected readonly rapportCarte = RAPPORT_CARTE;
@@ -317,6 +345,10 @@ export class TableComponent {
 
   protected largeurGroupe(groupe: Groupe): number {
     return largeurRangee(groupe.cartes.length, this.cwGroupe(), PAS_GROUPE);
+  }
+
+  protected largeurPli(zone: Zone): number {
+    return largeurRangee(zone.cartes.length, this.cwGroupe(), PAS_GROUPE);
   }
 
   protected largeurLigne(zone: Zone): number {

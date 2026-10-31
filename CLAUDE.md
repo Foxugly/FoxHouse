@@ -1,6 +1,7 @@
 # CLAUDE.md
 
-FoxHouse : site de jeux de cartes contre l'ordinateur, de la flotte Foxugly. La v1 ne livre que le rami 51.
+FoxHouse : site de jeux de cartes contre l'ordinateur, de la flotte Foxugly. Jeux : rami 51, 8 américain,
+dame de pique, président ; les suivants sont dans `docs/backlog.md`.
 Django (API JSON) dans `backend/`, Angular 21 dans `frontend/`. Conception : `docs/superpowers/specs/2026-10-31-foxhouse-design.md`.
 Référence de la flotte : `D:\Projects\PycharmProjects\foxChess`. Code, commentaires et messages en français.
 
@@ -19,6 +20,8 @@ Référence de la flotte : `D:\Projects\PycharmProjects\foxChess`. Code, comment
   `normaliser_coup`), registre des jeux (`registre.py`), options (`options.py`), cartes (`cartes.py`),
   schéma de la vue de table et son validateur `valider_vue` (`vue.py`).
 - `rami/` — le rami 51, sans Django hors `apps.py` ; s'inscrit au registre dans `RamiConfig.ready()`.
+- `huit/`, `dame/`, `president/` — 8 américain, dame de pique, président, bâtis comme le rami.
+  Règles : `docs/superpowers/specs/2026-10-31-jeux-huit-dame-president.md`.
 - `parties/` — le seul code Django du jeu, commun à tous les jeux :
   - `models.Partie` : `jeu`, `joueur` (jeton du créateur), `sieges`, `etat` (JSON du jeu), `version`, `terminee` ;
   - `sieges` dit qui occupe chaque siège : `{"type": "humain", "joueur": <jeton>}` ou `{"type": "machine"}`.
