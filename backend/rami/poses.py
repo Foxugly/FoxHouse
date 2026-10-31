@@ -28,8 +28,10 @@ def _exiger_phase(etat: dict) -> None:
 
 
 def _exiger_en_main(etat: dict, j: int, cartes: list[str]) -> None:
+    if not cartes or len(set(cartes)) != len(cartes):
+        raise CoupRefuse("Choisis des cartes différentes de ta main.")
     main = etat["mains"][j]
-    if not cartes or len(set(cartes)) != len(cartes) or any(c not in main for c in cartes):
+    if any(c not in main for c in cartes):
         raise CoupRefuse("Ces cartes ne sont pas dans ta main.")
 
 
@@ -121,7 +123,7 @@ def annuler(etat: dict, j: int) -> str:
     for d in etat["brouillon"]:
         etat["mains"][j].extend(d["cartes"])
     etat["brouillon"] = []
-    return "Les cartes en attente reviennent dans ta main."
+    return f"{_verbe(j, 'reprends', 'reprend')} les cartes en attente."
 
 
 def ajouter_a(etat: dict, j: int, cartes: list[str], groupe_id) -> str:
@@ -141,6 +143,19 @@ def ajouter_a(etat: dict, j: int, cartes: list[str], groupe_id) -> str:
     return message
 
 
+def _joker_rejouable(etat: dict, j: int, groupe: dict, comb, joker: str) -> bool:
+    """Le joker récupéré pourrait-il être ajouté à un groupe de la table (après l'échange) ?
+
+    Sans cela, le joueur serait bloqué : il ne peut défausser le joker récupéré. La main
+    garde sa taille après l'échange ; avec « finir par une défausse », l'ajout du joker
+    doit y laisser au moins une carte.
+    """
+    if etat["options"]["finir_par_defausse"] and len(etat["mains"][j]) <= 1:
+        return False
+    combs = [comb if g is groupe else depuis_dict(g) for g in etat["table"]]
+    return any(ajouter(c, [joker]) is not None for c in combs)
+
+
 def recuperer(etat: dict, j: int, carte: str, groupe_id) -> str:
     """Remplace le joker d'un groupe par cette carte ; le joker passe dans la main."""
     _exiger_phase(etat)
@@ -157,6 +172,8 @@ def recuperer(etat: dict, j: int, carte: str, groupe_id) -> str:
     if resultat is None:
         raise CoupRefuse("Cette carte ne remplace pas le joker de ce groupe.")
     comb, joker = resultat
+    if not _joker_rejouable(etat, j, groupe, comb, joker):
+        raise CoupRefuse("Tu ne pourrais pas rejouer ce joker ce tour-ci.")
     _retirer_de_la_main(etat, j, [carte])
     etat["mains"][j].append(joker)
     etat["joker_recupere"] = joker

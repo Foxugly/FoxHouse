@@ -46,7 +46,7 @@ class OuvertureTests(SimpleTestCase):
         e = etat_jouer(SUITE + BRELAN + ["2S-2"])
         poser(e, 0, SUITE)
         poser(e, 0, BRELAN)
-        annuler(e, 0)
+        self.assertEqual(annuler(e, 0), "Tu reprends les cartes en attente.")
         self.assertEqual(e["brouillon"], [])
         self.assertCountEqual(e["mains"][0], SUITE + BRELAN + ["2S-2"])
 
@@ -70,8 +70,12 @@ class OuvertureTests(SimpleTestCase):
         e = etat_jouer(SUITE + ["2S-2"])
         with self.assertRaisesRegex(CoupRefuse, "combinaison"):
             poser(e, 0, ["7H-1", "8H-1", "2S-2"])
-        with self.assertRaisesRegex(CoupRefuse, "main"):
+        with self.assertRaisesRegex(CoupRefuse, "pas dans ta main"):
             poser(e, 0, ["7H-1", "8H-1", "10H-1"])
+        with self.assertRaisesRegex(CoupRefuse, "Choisis des cartes différentes"):
+            poser(e, 0, ["7H-1", "7H-1", "8H-1"])
+        with self.assertRaisesRegex(CoupRefuse, "Choisis des cartes différentes"):
+            poser(e, 0, [])
         e["phase"] = "piocher"
         with self.assertRaises(CoupRefuse):
             poser(e, 0, SUITE)
@@ -147,6 +151,59 @@ class JokerTests(SimpleTestCase):
             recuperer(e, 0, "8H-2", "g1")
         self.assertEqual(e["joker_recupere"], None)
         self.assertNotIn("JK-1", e["mains"][0])
+
+    def test_recuperer_avec_une_seule_carte_refuse(self):
+        # La main deviendrait [JK] : impossible de l'ajouter en gardant une carte.
+        e = self._etat()
+        e["mains"][0] = ["8H-2"]
+        with self.assertRaisesRegex(CoupRefuse, "Tu ne pourrais pas rejouer ce joker ce tour-ci."):
+            recuperer(e, 0, "8H-2", "g1")
+        self.assertEqual(e["mains"][0], ["8H-2"])
+        self.assertEqual(e["table"][0]["cartes"], ["7H-1", "JK-1", "9H-1"])
+        self.assertIsNone(e["joker_recupere"])
+
+    def test_recuperer_joker_qui_ne_va_nulle_part_refuse(self):
+        # Le carré redevient complet : un joker n'y entre plus, et il n'y a pas d'autre groupe.
+        e = etat_jouer(["KC-2", "2S-2"])
+        e["ouvert"][0] = True
+        e["table"] = [
+            {
+                "id": "g1",
+                "auteur": 1,
+                "type": "brelan",
+                "cartes": ["KS-1", "KH-1", "KD-1", "JK-1"],
+                "jokers": {"JK-1": "KC"},
+            }
+        ]
+        with self.assertRaisesRegex(CoupRefuse, "rejouer ce joker"):
+            recuperer(e, 0, "KC-2", "g1")
+        self.assertEqual(e["mains"][0], ["KC-2", "2S-2"])
+        self.assertEqual(e["table"][0]["cartes"], ["KS-1", "KH-1", "KD-1", "JK-1"])
+        # Avec une suite ailleurs sur la table, le joker peut y aller : accepté.
+        e["table"].append(
+            {"id": "g2", "auteur": 1, "type": "suite", "cartes": list(SUITE), "jokers": {}}
+        )
+        recuperer(e, 0, "KC-2", "g1")
+        self.assertEqual(e["joker_recupere"], "JK-1")
+        self.assertEqual(e["table"][0]["cartes"], ["KS-1", "KH-1", "KD-1", "KC-2"])
+
+    def test_seconde_recuperation_refusee(self):
+        e = self._etat()
+        e["mains"][0].append("5S-2")
+        e["table"].append(
+            {
+                "id": "g2",
+                "auteur": 1,
+                "type": "suite",
+                "cartes": ["3S-1", "4S-1", "JK-2"],
+                "jokers": {"JK-2": "5S"},
+            }
+        )
+        recuperer(e, 0, "8H-2", "g1")
+        with self.assertRaisesRegex(CoupRefuse, "Utilise d'abord le joker récupéré."):
+            recuperer(e, 0, "5S-2", "g2")
+        self.assertEqual(e["joker_recupere"], "JK-1")
+        self.assertIn("5S-2", e["mains"][0])
 
     def test_recuperer_refuse(self):
         e = self._etat()
