@@ -252,21 +252,17 @@ def _suite_des_encheres(etat: dict, j: int) -> str:
     if enchere["code"] == "demande":
         etat["phase"] = "demande_seule"
         etat["actif"] = enchere["preneur"]
-        return f" Personne n'accepte la demande {_de(enchere['preneur'])}."
+        demandeur = enchere["preneur"]
+        demande = "ta demande" if demandeur == 0 else f"la demande d'{nom_joueur(demandeur)}"
+        return f" Personne n'accepte {demande}."
     return f" {_fixer_contrat(etat, enchere['code'], sorted(detenteurs))}"
-
-
-def _de(j: int) -> str:
-    return "de toi" if j == 0 else f"d'{nom_joueur(j)}"
 
 
 def _rejouer(etat: dict) -> str:
     """Donne rejouée par le donneur suivant, sans point ; rend la fin du message."""
     etat["donneur"] = (etat["donneur"] + 1) % NB
     trou = distribuer(etat)
-    donneur = etat["donneur"]
-    distribue = "tu distribues" if donneur == 0 else f"{nom_joueur(donneur)} distribue"
-    message = f"la donne est rejouée, {distribue}."
+    message = f"la donne est rejouée, {_distribue(etat['donneur'])}."
     return f"{message} {trou}" if trou else message
 
 
@@ -432,6 +428,9 @@ def totaux(etat: dict) -> list[int]:
 def donne_suivante(etat: dict) -> str:
     etat["donneur"] = (etat["donneur"] + 1) % NB
     trou = distribuer(etat)
-    debut = (f"Donne {len(etat['scores']) + 1} : "
-             f"{_verbe(etat['donneur'], 'distribues', 'distribue')}.")
+    debut = f"Donne {len(etat['scores']) + 1} : {_distribue(etat['donneur'])}."
     return f"{debut} {trou}" if trou else debut
+
+
+def _distribue(donneur: int) -> str:
+    return "tu distribues" if donneur == 0 else f"{nom_joueur(donneur)} distribue"
