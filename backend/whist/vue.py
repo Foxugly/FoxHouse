@@ -5,7 +5,7 @@ avec deux exceptions publiques (spec whist §5) : la carte retournée, tant que 
 pas jouée, et la main du preneur d'une misère ouverte, une fois le premier pli joué.
 """
 
-from tapis.cartes import CACHEE, decrire
+from tapis.cartes import CACHEE, decrire, enseigne
 from tapis.vue import SCHEMA
 from whist.manche import (
     COULEURS,
@@ -123,9 +123,12 @@ def _zones(etat: dict, j: int) -> list[dict]:
     for s in _ordre(j):
         zones += [_main(etat, j, s), _pli(etat, s)]
     if retournee_visible(etat):
-        # La même carte est aussi dans la main du donneur : le schéma le permet.
+        # La même carte est aussi dans la main du donneur : le schéma le permet. Elle ne s'appelle
+        # « Atout » que tant que sa couleur l'est (pas sous une abondance, un solo slim, une misère).
+        est_atout = etat["contrat"] is None or etat["atout"] == enseigne(etat["retournee"])
         zones.append({
-            "id": "atout", "type": "pile", "siege": None, "libelle": "Atout",
+            "id": "atout", "type": "pile", "siege": None,
+            "libelle": "Atout" if est_atout else "Retournée",
             "cartes": [decrire(etat["retournee"])], "nombre": None, "groupes": [],
         })
     return zones

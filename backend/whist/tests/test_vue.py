@@ -119,6 +119,15 @@ class VueTests(SimpleTestCase):
         self.assertFalse([z for z in v["zones"] if z["id"] == "atout"])
         self.assertNotIn("Retournée", menu(v))
 
+    def test_la_retournee_ne_s_appelle_atout_que_si_elle_l_est(self):
+        mains = [["2S-1", "9S-1"], ["3S-1", "8D-1"], ["4S-1", "8C-1"], ["7H-1", "7C-1"]]
+        e = etat_plis(mains, retournee="7H-1", donneur=3, code="misere", preneurs=[1], atout=None)
+        self.assertEqual(zone(vue(e, 0), "atout")["libelle"], "Retournée")
+        e = etat_plis(mains, retournee="7H-1", donneur=3, atout="S")
+        self.assertEqual(zone(vue(e, 0), "atout")["libelle"], "Retournée")
+        e = etat_plis(mains, retournee="7H-1", donneur=3, atout="H")
+        self.assertEqual(zone(vue(e, 0), "atout")["libelle"], "Atout")
+
     def test_misere_ouverte_main_etalee_apres_le_premier_pli(self):
         mains = [["2S-1", "9S-1"], ["3S-1", "8D-1"], ["AS-1", "8C-1"], ["5S-1", "7C-1"]]
         e = etat_plis(mains, code="misere_ouverte", preneurs=[1], atout=None)
