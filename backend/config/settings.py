@@ -61,6 +61,7 @@ INSTALLED_APPS = [
     "huit",
     "dame",
     "president",
+    "whist",
 ]
 
 MIDDLEWARE = [
