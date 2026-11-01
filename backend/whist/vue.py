@@ -16,10 +16,10 @@ from whist.manche import (
     contrat_de_l_annonce,
     etiquette,
     libelle,
+    majuscule,
     nom_atout,
     nom_joueur,
     noms,
-    majuscule,
     totaux,
 )
 
