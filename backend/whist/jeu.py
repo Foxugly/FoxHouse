@@ -9,6 +9,7 @@ from whist import adversaire as adversaire_whist
 from whist import manche
 from whist import vue as vue_whist
 from whist.options import OPTIONS
+from whist.rappel import REGLES
 
 
 def _exiger_nombre(action: dict, cartes: list[str]) -> None:
@@ -36,6 +37,9 @@ class Whist(Jeu):
 
     def options(self):
         return OPTIONS
+
+    def regles(self):
+        return REGLES
 
     def nouvelle_partie(self, options: dict, nb_joueurs: int, graine: int) -> dict:
         if not self.min_joueurs <= nb_joueurs <= self.max_joueurs:
