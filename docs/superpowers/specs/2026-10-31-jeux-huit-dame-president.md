@@ -123,7 +123,7 @@ chelem.
 | Phase | Action | Cartes |
 |---|---|---|
 | échange | `donner` « Donner à <nom> » | 3 |
-| plis | `jouer` « Jouer » | 1 |
+| plis | `jouer` « Jouer », **direct** : un clic sur la carte la joue (2026-11-01) | 1 |
 | fin de manche | `manche_suivante` « Manche suivante » | 0 |
 
 ### 2.4 Vue

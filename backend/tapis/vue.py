@@ -153,6 +153,14 @@ def valider_vue(vue: dict) -> None:
         )
         _exiger(0 <= a["cartes_min"] <= a["cartes_max"], f"action {a['id']} : bornes incohérentes")
         _exiger(a.get("cible") in (None, "groupe"), f"action {a['id']} : cible inconnue")
+        # Facultatif : une action directe part au clic sur une carte, sans bouton ; elle prend
+        # donc exactement une carte et aucune cible.
+        _exiger(a.get("direct", False) in (False, True), f"action {a['id']} : « direct » invalide")
+        if a.get("direct"):
+            _exiger(
+                a["cartes_min"] == a["cartes_max"] == 1 and a["cible"] is None,
+                f"action {a['id']} : une action directe prend une carte et aucune cible",
+            )
 
     if vue["resultat"] is not None:
         _valider_resultat(vue["resultat"])

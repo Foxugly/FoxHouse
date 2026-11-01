@@ -69,6 +69,16 @@ describe('MenuComponent', () => {
     expect(bouton(g, action.libelle).closest('.action')!.querySelector('.raison')).toBeNull();
   });
 
+  it("une action directe n'a pas de bouton : une consigne la remplace", () => {
+    const base = vueEnAttente();
+    const action = base.actions.find((a) => a.cartes_min === 1 && a.cartes_max === 1)!;
+    const f = monter({ ...base, actions: [{ ...action, direct: true }] });
+    expect(boutons(f)).toEqual([]);
+    expect(racine(f).querySelector('.consigne')?.textContent?.trim()).toBe(
+      `${action.libelle} : un clic sur une carte suffit.`,
+    );
+  });
+
   it('occupé, tout est désactivé', () => {
     const f = monter(vueDebut(), { cartes: [], cible: null }, true);
     expect(boutons(f).length).toBeGreaterThan(0);

@@ -158,7 +158,9 @@ Format JSON versionné. Le serveur l'envoie après chaque action. Elle contient 
 - `actions` : les actions possibles maintenant, chacune avec un identifiant, un libellé, et ses
   **contraintes de sélection** : nombre de cartes de la main (min, max), et éventuellement une
   cible (une zone ou un groupe de `combinaisons`). Le tapis active un bouton seulement quand la
-  sélection respecte ses contraintes ; le serveur revérifie tout de toute façon.
+  sélection respecte ses contraintes ; le serveur revérifie tout de toute façon. Une action
+  marquée `direct` (une carte, aucune cible) n'a pas de bouton : le clic sur une carte de la main
+  l'envoie aussitôt (ajout du 2026-11-01, pour jouer un pli de la dame de pique d'un clic).
 - `version` : un compteur qui augmente à chaque action, pour refuser une action envoyée sur un état
   périmé (double clic, deux onglets).
 

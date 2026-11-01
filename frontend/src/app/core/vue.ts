@@ -61,6 +61,8 @@ export interface Action {
   cartes_min: number;
   cartes_max: number;
   cible: null | 'groupe';
+  /** Part au clic sur une carte, sans bouton (une carte, aucune cible). */
+  direct?: boolean;
 }
 
 export interface Resultat {

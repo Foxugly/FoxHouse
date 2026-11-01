@@ -166,6 +166,29 @@ describe('PartiePage', () => {
     expect(bouton(uneCarte.libelle)?.disabled).toBe(true);
   });
 
+  it("le clic sur une carte joue l'action directe, sans bouton", async () => {
+    const base = vueEnAttente();
+    const uneCarte = base.actions.find((a) => a.cartes_min === 1 && a.cartes_max === 1)!;
+    const vue = { ...base, actions: [{ ...uneCarte, direct: true }] };
+    const idCarte = (vue.zones.find((z) => z.siege === 0)!.cartes[1] as { id: string }).id;
+    await ouvrirEnDirect(vue);
+    expect(bouton(uneCarte.libelle)).toBeUndefined();
+
+    cartesDuJoueur()[1].click();
+    cartesDuJoueur()[0].click();
+    harness.detectChanges();
+    const requete = http.expectOne('/api/parties/p1/actions/');
+    expect(requete.request.body).toEqual({
+      version: vue.version,
+      action: uneCarte.id,
+      cartes: [idCarte],
+      cible: null,
+    });
+    requete.flush({ vue: vueMarquee(base, 'après', vue.version + 1), etapes: [] });
+    harness.detectChanges();
+    expect(texte()).toContain('après');
+  });
+
   it("n'envoie qu'un seul POST pour deux clics pendant la requête", async () => {
     await ouvrirEnDirect(vueFactice());
     bouton('Retourner')!.click();

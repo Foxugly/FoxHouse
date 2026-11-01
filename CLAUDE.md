@@ -76,7 +76,8 @@ Architecture (`src/app/`) :
   coin de chaque carte reste visible), `carte/`, `menu/` (lignes du menu et un bouton par action,
   ce qui manque à la sélection écrit sous un bouton inactif), `selection.ts` (cartes choisies et
   cible ; un bouton n'est actif que si `cartes_min ≤ sélection ≤ cartes_max` et la cible demandée
-  est choisie), `disposition.ts` (calculs de placement, sans Angular).
+  est choisie ; une action `direct` n'a pas de bouton : le clic sur une carte l'envoie avec cette
+  seule carte, et le menu l'écrit en consigne), `disposition.ts` (calculs de placement, sans Angular).
 - `pages/` — `accueil` (formulaire généré depuis `GET jeux/`, reprise de la partie courante) et
   `partie` (table + menu, envoi des actions, relecture des `etapes` avant la vue finale).
 - `src/testing/` — vues d'exemple (`vues.ts`) tirées du serveur, dont `factice.json`.

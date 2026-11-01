@@ -137,6 +137,7 @@ class VueTests(SimpleTestCase):
         e = etat_plis([["2S-1"], ["3S-1"], ["4H-1"]])
         self.assertEqual(vue(e, 0)["actions"], [{
             "id": "jouer", "libelle": "Jouer", "cartes_min": 1, "cartes_max": 1, "cible": None,
+            "direct": True,
         }])
         e = dernier_pli([["QS-1"], [], [], []], ["AC-1", "4H-1", "5C-1", "6C-1"])
         e, _ = jouer_le_pli(e)

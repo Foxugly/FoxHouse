@@ -46,6 +46,12 @@ dd {
 }
 
 /* Ce qui manque pour activer le bouton : visible, pas seulement au survol. */
+.consigne {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--attenue);
+}
+
 .raison {
   max-width: 14ch;
   font-size: 0.68rem;
