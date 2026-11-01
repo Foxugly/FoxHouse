@@ -17,11 +17,14 @@ from tapis.cartes import CACHEE, decrire
 from tapis.vue import SCHEMA
 
 
-def _action(id_, libelle, cartes_min, cartes_max) -> dict:
-    return {
+def _action(id_, libelle, cartes_min, cartes_max, direct=False) -> dict:
+    action = {
         "id": id_, "libelle": libelle, "cartes_min": cartes_min, "cartes_max": cartes_max,
         "cible": None,
     }
+    if direct:
+        action["direct"] = True
+    return action
 
 
 def actions_permises(etat: dict, j: int) -> list[dict]:
@@ -32,7 +35,8 @@ def actions_permises(etat: dict, j: int) -> list[dict]:
     if phase == "echange":
         return [_action("donner", f"Donner à {nom_joueur(destinataire(etat, j))}", 3, 3)]
     if phase == "plis":
-        return [_action("jouer", "Jouer", 1, 1)]
+        # Un pli se joue d'un clic sur la carte (demande de Renaud, 2026-11-01).
+        return [_action("jouer", "Jouer", 1, 1, direct=True)]
     return [_action("manche_suivante", "Manche suivante", 0, 0)]
 
 

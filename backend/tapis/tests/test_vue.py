@@ -66,6 +66,11 @@ class TestVue(SimpleTestCase):
         v["zones"][0]["siege"] = 2
         valider_vue(v)
 
+    def test_action_directe(self):
+        v = vue_minimale()
+        v["actions"][0]["direct"] = True
+        valider_vue(v)
+
     def test_resultat_valide(self):
         v = vue_minimale()
         v["resultat"] = {"titre": "Fin", "colonnes": ["Joueur", "Points"], "lignes": [["Toi", 0]]}
@@ -99,6 +104,8 @@ class TestVue(SimpleTestCase):
         self._refuse(lambda v: v["zones"][0]["cartes"].append({"id": "7H-1"}))
         self._refuse(lambda v: v["actions"][0].update(cible="autre"))
         self._refuse(lambda v: v["actions"][1].update(cartes_min=5))
+        self._refuse(lambda v: v["actions"][0].update(direct="oui"))
+        self._refuse(lambda v: v["actions"][1].update(direct=True))
         self._refuse(lambda v: v.update(resultat={"titre": "x"}))
         self._refuse(lambda v: v.update(terminee="non"))
         self._refuse(

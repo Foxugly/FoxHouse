@@ -107,10 +107,10 @@ export class PartiePage {
     void this.router.navigate([''], { state: { message: AUCUNE_PARTIE } });
   }
 
-  protected agir(action: Action): void {
+  protected agir(action: Action, selection: Selection = this.selection()): void {
     const vue = this.vue();
     if (this.bloque() || !vue || !this.id) return;
-    const { cartes, cible } = this.selection();
+    const { cartes, cible } = selection;
     this.occupe.set(true);
     this.erreur.set(null);
     this.api
@@ -140,8 +140,11 @@ export class PartiePage {
     this.occupe.set(false);
   }
 
+  /** Une action directe part au clic sur la carte ; sinon le clic choisit la carte. */
   protected basculer(idCarte: string): void {
     if (this.relecture.enCours()) return;
+    const directe = this.vue()?.actions.find((a) => a.direct);
+    if (directe) return this.agir(directe, { cartes: [idCarte], cible: null });
     this.selection.update((s) => basculer(s, idCarte));
   }
 

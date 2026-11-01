@@ -12,19 +12,23 @@
   <div class="actions">
     @for (action of vue().actions; track action.id) {
       @let raison = raisonDesactivee(action);
-      <div class="action">
-        <button
-          type="button"
-          [disabled]="!activable(action)"
-          [attr.aria-describedby]="raison ? idRaison(action) : null"
-          (click)="agir.emit(action)"
-        >
-          {{ action.libelle }}
-        </button>
-        @if (raison) {
-          <span class="raison" [id]="idRaison(action)">{{ raison }}</span>
-        }
-      </div>
+      @if (action.direct) {
+        <p class="consigne">{{ action.libelle }} : un clic sur une carte suffit.</p>
+      } @else {
+        <div class="action">
+          <button
+            type="button"
+            [disabled]="!activable(action)"
+            [attr.aria-describedby]="raison ? idRaison(action) : null"
+            (click)="agir.emit(action)"
+          >
+            {{ action.libelle }}
+          </button>
+          @if (raison) {
+            <span class="raison" [id]="idRaison(action)">{{ raison }}</span>
+          }
+        </div>
+      }
     }
   </div>
 }
