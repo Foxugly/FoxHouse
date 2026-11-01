@@ -6,6 +6,7 @@ from dame import adversaire as adversaire_dame
 from dame import manche
 from dame import vue as vue_dame
 from dame.options import OPTIONS
+from dame.rappel import REGLES
 from tapis.cartes import est_carte
 from tapis.jeu import CoupRefuse, Jeu, normaliser_coup
 from tapis.options import valider
@@ -38,6 +39,9 @@ class Dame(Jeu):
 
     def options(self):
         return OPTIONS
+
+    def regles(self):
+        return REGLES
 
     def nouvelle_partie(self, options: dict, nb_joueurs: int, graine: int) -> dict:
         if not self.min_joueurs <= nb_joueurs <= self.max_joueurs:

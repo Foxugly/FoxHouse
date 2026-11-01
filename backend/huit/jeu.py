@@ -6,6 +6,7 @@ from huit import adversaire as adversaire_huit
 from huit import manche
 from huit import vue as vue_huit
 from huit.options import OPTIONS
+from huit.rappel import REGLES
 from tapis.cartes import est_carte
 from tapis.jeu import CoupRefuse, Jeu, normaliser_coup
 from tapis.options import valider
@@ -44,6 +45,9 @@ class Huit(Jeu):
 
     def options(self):
         return OPTIONS
+
+    def regles(self):
+        return REGLES
 
     def nouvelle_partie(self, options: dict, nb_joueurs: int, graine: int) -> dict:
         if not self.min_joueurs <= nb_joueurs <= self.max_joueurs:

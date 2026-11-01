@@ -29,3 +29,29 @@
   outline-offset: 2px;
   border-radius: 4px;
 }
+
+.navigation {
+  margin-left: auto;
+}
+
+.navigation a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  padding-inline: 10px;
+  font:
+    600 0.9rem system-ui,
+    sans-serif;
+  color: var(--attenue);
+  text-decoration: none;
+  border-radius: 8px;
+}
+
+.navigation a.active {
+  color: var(--texte);
+}
+
+.navigation a:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}

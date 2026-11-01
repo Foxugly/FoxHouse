@@ -71,6 +71,7 @@ class TestRegistre(SimpleTestCase):
             {"code": "bidon", "nom": "Bidon", "min_joueurs": 2, "max_joueurs": 4},
         )
         self.assertEqual(d["options"][0]["code"], "n")
+        self.assertEqual(d["regles"], [])
 
     def test_abstrait(self):
         with self.assertRaises(TypeError):

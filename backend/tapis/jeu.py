@@ -64,6 +64,13 @@ class Jeu(ABC):
     def adversaire(self, etat, joueur: int) -> dict:
         """Coup choisi par l'ordinateur."""
 
+    def regles(self) -> list[dict]:
+        """Rappel des règles pour la page « Règles » : des sections {"titre", "points"}.
+
+        `points` est une liste de phrases en texte brut, affichées en liste à puces.
+        """
+        return []
+
     def decrire(self) -> dict:
         return {
             "code": self.code,
@@ -71,4 +78,5 @@ class Jeu(ABC):
             "min_joueurs": self.min_joueurs,
             "max_joueurs": self.max_joueurs,
             "options": [o.decrire() for o in self.options()],
+            "regles": self.regles(),
         }

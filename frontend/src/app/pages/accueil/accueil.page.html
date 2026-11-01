@@ -42,6 +42,9 @@
       } @else {
         <h2 class="nom-jeu">{{ j.nom }}</h2>
       }
+      <a class="lien-regles" routerLink="/regles" [queryParams]="{ jeu: j.code }">
+        Règles : {{ j.nom }}
+      </a>
 
       <form (submit)="commencer($event)">
         <label class="champ">

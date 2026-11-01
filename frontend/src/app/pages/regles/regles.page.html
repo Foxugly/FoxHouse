@@ -1,0 +1,57 @@
+<div class="regles">
+  <h1>Règles des jeux</h1>
+
+  @if (erreurChargement(); as e) {
+    <p class="erreur" role="alert">{{ e }}</p>
+  } @else if (jeux() === null) {
+    <p class="info">Chargement des jeux…</p>
+  } @else if (jeu(); as j) {
+    <div class="onglets" role="tablist" aria-label="Jeux">
+      @for (autre of jeux(); track autre.code) {
+        <button
+          type="button"
+          role="tab"
+          class="onglet"
+          [id]="'onglet-' + autre.code"
+          [attr.aria-selected]="autre.code === j.code"
+          [attr.aria-controls]="'panneau-' + autre.code"
+          [attr.tabindex]="autre.code === j.code ? 0 : -1"
+          (click)="choisir(autre.code)"
+          (keydown)="clavier($event)"
+        >
+          {{ autre.nom }}
+        </button>
+      }
+    </div>
+
+    <section
+      class="panneau"
+      role="tabpanel"
+      tabindex="0"
+      [id]="'panneau-' + j.code"
+      [attr.aria-labelledby]="'onglet-' + j.code"
+    >
+      <h2>{{ j.nom }}</h2>
+      <p class="joueurs">
+        @if (j.min_joueurs === j.max_joueurs) {
+          {{ j.min_joueurs }} joueurs
+        } @else {
+          De {{ j.min_joueurs }} à {{ j.max_joueurs }} joueurs
+        }
+      </p>
+      @for (section of j.regles; track $index) {
+        <h3>{{ section.titre }}</h3>
+        <ul>
+          @for (point of section.points; track $index) {
+            <li>{{ point }}</li>
+          }
+        </ul>
+      } @empty {
+        <p class="info">Pas encore de rappel des règles pour ce jeu.</p>
+      }
+      <a class="bouton" routerLink="/">Jouer</a>
+    </section>
+  } @else {
+    <p class="info">Aucun jeu disponible.</p>
+  }
+</div>

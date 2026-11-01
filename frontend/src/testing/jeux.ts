@@ -45,6 +45,13 @@ export const jeuAvecOptions = (): DescriptionJeu => ({
       maximum: 10,
     },
   ],
+  regles: [
+    { titre: 'Le jeu', points: ['De 2 à 6 joueurs, 13 cartes chacun.'] },
+    {
+      titre: 'Un tour',
+      points: ['Prends une carte.', 'Défausse-toi d’une carte, face visible.'],
+    },
+  ],
 });
 
 /** Un jeu sans option, d'un nombre de joueurs fixe. */
@@ -54,4 +61,5 @@ export const jeuSansOption = (): DescriptionJeu => ({
   min_joueurs: 3,
   max_joueurs: 3,
   options: [],
+  regles: [],
 });

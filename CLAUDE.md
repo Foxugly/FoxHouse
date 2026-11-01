@@ -47,7 +47,7 @@ Une étape vaut `{"message", "vue"}` : le tapis les rejoue avant d'afficher la v
 
 | Méthode et chemin | Corps | Réponse |
 |---|---|---|
-| `GET jeux/` (CSRF) | — | 200 `[jeu.decrire()]` |
+| `GET jeux/` (CSRF) | — | 200 `[jeu.decrire()]` (code, nom, bornes, options, `regles`) |
 | `POST parties/` | `{"jeu", "nb_joueurs", "options"}` | 201 `{"id", "vue", "etapes"}` ; remplace la partie précédente du joueur. 400 jeu inconnu, `nb_joueurs` hors bornes, option invalide |
 | `GET parties/courante/` (CSRF) | — | 200 `{"id", "vue"}` ou 204 |
 | `GET parties/<uuid>/` | — | 200 `{"id", "vue"}` |
@@ -80,8 +80,9 @@ Architecture (`src/app/`) :
   cible ; un bouton n'est actif que si `cartes_min ≤ sélection ≤ cartes_max` et la cible demandée
   est choisie ; une action `direct` n'a pas de bouton : le clic sur une carte l'envoie avec cette
   seule carte, et le menu l'écrit en consigne), `disposition.ts` (calculs de placement, sans Angular).
-- `pages/` — `accueil` (formulaire généré depuis `GET jeux/`, reprise de la partie courante) et
-  `partie` (table + menu, envoi des actions, relecture des `etapes` avant la vue finale).
+- `pages/` — `accueil` (formulaire généré depuis `GET jeux/`, reprise de la partie courante),
+  `partie` (table + menu, envoi des actions, relecture des `etapes` avant la vue finale) et `regles`
+  (un onglet par jeu, `?jeu=<code>`, texte tiré de `regles` de `GET jeux/`).
 - `src/testing/` — vues d'exemple (`vues.ts`) tirées du serveur, dont `factice.json`.
 
 Habillage : l'image d'une carte vient du jeton `HABILLAGE` (`tapis/habillage.ts`), par défaut
@@ -109,7 +110,9 @@ rendue par `/health/`.
 1. Créer l'app (`manage.py startapp <jeu>`) ; ses règles n'importent pas Django.
 2. Implémenter `tapis.jeu.Jeu` : `options`, `nouvelle_partie` (graine de 128 bits), `joueur_actif`,
    `appliquer` (sur une copie de l'état, `CoupRefuse` pour un coup interdit, message `None` pour un coup
-   privé, alors `message_prive` donne celui de son auteur), `vue` (conforme à `valider_vue`), `adversaire`.
+   privé, alors `message_prive` donne celui de son auteur), `vue` (conforme à `valider_vue`), `adversaire`,
+   et `regles` : le rappel affiché par la page « Règles », dans `<jeu>/rappel.py` (sections
+   `{"titre", "points"}`, la dernière « Options » avec une phrase par option ; `tapis/tests/test_rappel.py`).
 3. L'inscrire dans `ready()` de son `AppConfig` (`registre.inscrire(MonJeu())`, comme `rami/apps.py`).
 4. L'ajouter à `INSTALLED_APPS` ; l'en retirer fait disparaître le jeu.
 5. Écrire son test de fuite (comme `rami/tests/test_vue.py::test_vue_ne_fuit_rien`) : sur des parties

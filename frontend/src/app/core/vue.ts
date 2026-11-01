@@ -107,6 +107,13 @@ export interface DescriptionJeu {
   min_joueurs: number;
   max_joueurs: number;
   options: DescriptionOption[];
+  /** Le rappel des règles, en sections de phrases en texte brut ; vide si le jeu n'en a pas. */
+  regles: SectionRegles[];
+}
+
+export interface SectionRegles {
+  titre: string;
+  points: string[];
 }
 
 export interface Coup {

@@ -7,6 +7,7 @@ from rami import manche, poses
 from rami import vue as vue_rami
 from rami.manche import _verbe, etiquette_carte
 from rami.options import OPTIONS
+from rami.rappel import REGLES
 from tapis.cartes import est_carte
 from tapis.jeu import CoupRefuse, Jeu, normaliser_coup
 from tapis.options import valider
@@ -84,6 +85,9 @@ class Rami(Jeu):
 
     def options(self):
         return OPTIONS
+
+    def regles(self):
+        return REGLES
 
     def nouvelle_partie(self, options: dict, nb_joueurs: int, graine: int) -> dict:
         if not self.min_joueurs <= nb_joueurs <= self.max_joueurs:
