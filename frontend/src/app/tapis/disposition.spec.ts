@@ -70,6 +70,26 @@ describe('pasCartes', () => {
     }
   });
 
+  it('avec un pas minimal plus petit, reste sur une rangée plus longtemps', () => {
+    // 13 cartes de 124 px dans 700 px : 0,42·cw ne tient pas, 0,25·cw si.
+    expect(pasCartes(13, 124, 700).rangees).toBe(2);
+    const r = pasCartes(13, 124, 700, 0.25);
+    expect(r.rangees).toBe(1);
+    expect(r.pas).toBeGreaterThanOrEqual(0.25 * 124);
+  });
+
+  it('ne recouvre jamais une carte à plus de 75 %, quel que soit le pas minimal demandé', () => {
+    for (const [nb, cw, dispo, pasMin] of [
+      [40, 124, 700, 0.25],
+      [60, 124, 400, 0.25],
+      [22, 34, 60, 0.1],
+      [30, 50, 200, 0.42],
+    ]) {
+      const r = pasCartes(nb, cw, dispo, pasMin);
+      if (r.parRangee > 1) expect(r.pas).toBeGreaterThanOrEqual(0.25 * cw - 1e-9);
+    }
+  });
+
   it('gère zéro ou une carte', () => {
     expect(pasCartes(0, 50, 600)).toEqual({ pas: 0, rangees: 1, parRangee: 0 });
     expect(pasCartes(1, 50, 600)).toEqual({ pas: 0, rangees: 1, parRangee: 1 });

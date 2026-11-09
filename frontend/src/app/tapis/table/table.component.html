@@ -28,6 +28,7 @@
             [cartes]="z.zone.cartes"
             [largeurDispo]="z.largeur"
             [cw]="z.cw"
+            [pasMin]="z.pasMin"
             [selectionnable]="selectionnable(p, z.zone)"
             [selection]="selection()"
             (basculer)="basculer.emit($event)"
@@ -35,7 +36,12 @@
         } @else {
           <div class="zone-siege" [attr.data-zone]="z.zone.id">
             <span class="libelle">{{ z.zone.libelle }}</span>
-            <app-main [cartes]="z.zone.cartes" [largeurDispo]="z.largeur" [cw]="z.cw" />
+            <app-main
+              [cartes]="z.zone.cartes"
+              [largeurDispo]="z.largeur"
+              [cw]="z.cw"
+              [pasMin]="z.pasMin"
+            />
             @if (z.zone.nombre !== null) {
               <span class="nombre">{{ z.zone.nombre }}</span>
             }

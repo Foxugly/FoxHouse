@@ -26,16 +26,27 @@ export function largeurCarte(largeur: number, hauteur: number): number {
   return Math.max(34, Math.min(62, Math.min(largeur, hauteur * 1.4) / 15));
 }
 
+/** Pas minimal par défaut sur une rangée, en largeurs de carte. */
+export const PAS_MIN = 0.42;
+/** Part d'une carte qui reste toujours visible : une carte n'est jamais recouverte à plus de 75 %. */
+export const PART_VISIBLE_MIN = 0.25;
+
 /**
- * Pas entre les cartes d'une main : 1,08·cw au plus, 0,42·cw au moins sur une rangée. Sinon, le
- * moins de rangées possible avec un pas d'au moins 0,8 × 0,42·cw : deux cartes d'une même rangée
- * ne sont jamais au même endroit, le coin de chacune reste visible, et la rangée tient dans
- * `largeurDispo` (dès qu'elle vaut au moins `cw`).
+ * Pas entre les cartes d'une main : 1,08·cw au plus, `pasMin`·cw au moins sur une rangée. Sinon, le
+ * moins de rangées possible avec un pas d'au moins 0,8 × `pasMin`·cw, jamais sous
+ * `PART_VISIBLE_MIN`·cw : deux cartes d'une même rangée ne sont jamais au même endroit, le coin de
+ * chacune reste visible, et la rangée tient dans `largeurDispo` (dès qu'elle vaut au moins `cw`).
  */
-export function pasCartes(nb: number, cw: number, largeurDispo: number): PasCartes {
+export function pasCartes(
+  nb: number,
+  cw: number,
+  largeurDispo: number,
+  pasMinRelatif = PAS_MIN,
+): PasCartes {
   if (nb <= 1) return { pas: 0, rangees: 1, parRangee: nb };
   const pasMax = 1.08 * cw;
-  const pasMin = 0.42 * cw;
+  const pasMin = Math.max(pasMinRelatif, PART_VISIBLE_MIN) * cw;
+  const pasPlancher = Math.max(0.8 * pasMin, PART_VISIBLE_MIN * cw);
   const libre = largeurDispo - cw;
   const pasUneRangee = Math.min(pasMax, libre / (nb - 1));
   if (pasUneRangee >= pasMin) return { pas: pasUneRangee, rangees: 1, parRangee: nb };
@@ -43,7 +54,7 @@ export function pasCartes(nb: number, cw: number, largeurDispo: number): PasCart
     const parRangee = Math.ceil(nb / rangees);
     if (parRangee === 1) break;
     const pas = Math.min(pasMax, libre / (parRangee - 1));
-    if (pas >= pasMin * 0.8) return { pas, rangees: Math.ceil(nb / parRangee), parRangee };
+    if (pas >= pasPlancher) return { pas, rangees: Math.ceil(nb / parRangee), parRangee };
   }
   return { pas: 0, rangees: nb, parRangee: 1 };
 }

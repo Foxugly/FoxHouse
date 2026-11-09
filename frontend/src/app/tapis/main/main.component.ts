@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import { Carte } from '../../core/vue';
 import { CarteComponent, RAPPORT_CARTE } from '../carte/carte.component';
-import { indexRenforce, pasCartes } from '../disposition';
+import { indexRenforce, PAS_MIN, pasCartes } from '../disposition';
 import { Selection } from '../selection';
 
 /** Marge au-dessus de la main pour la place d'une carte soulevée. */
@@ -24,12 +24,14 @@ export class MainComponent {
   readonly cartes = input.required<Carte[]>();
   readonly largeurDispo = input.required<number>();
   readonly cw = input.required<number>();
+  /** Pas minimal sur une rangée, en largeurs de carte : plus bas, les cartes se chevauchent plus. */
+  readonly pasMin = input(PAS_MIN);
   readonly selectionnable = input(false);
   readonly selection = input<Selection>({ cartes: [], cible: null });
   readonly basculer = output<string>();
 
   private readonly disposition = computed(() =>
-    pasCartes(this.cartes().length, this.cw(), this.largeurDispo()),
+    pasCartes(this.cartes().length, this.cw(), this.largeurDispo(), this.pasMin()),
   );
 
   /** Plusieurs rangées : la main est serrée, l'index des cartes doit rester lisible. */
