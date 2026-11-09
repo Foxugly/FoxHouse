@@ -9,6 +9,7 @@ import { PartieCreee } from '../../core/api.service';
 import { Etape, VueTable } from '../../core/vue';
 import { vueDebut, vueEnAttente, vueFactice } from '../../../testing/vues';
 import { PartiePage } from './partie.page';
+import { DELAI_PLI } from './plis';
 import { DELAI_ETAPE } from './relecture';
 
 @Component({ template: '' })
@@ -109,7 +110,8 @@ describe('PartiePage', () => {
     await ouvrirApresCreation(creee());
     expect(bandeau()?.textContent).toContain('Étape 1');
     expect(texte()).toContain('e1');
-    expect(bouton('Retourner')?.disabled).toBe(true);
+    // Pendant la relecture, ce n'est pas à toi : la barre n'a pas de bouton.
+    expect(bouton('Retourner')).toBeUndefined();
     vi.advanceTimersByTime(DELAI_ETAPE);
     harness.detectChanges();
     expect(bandeau()?.textContent).toContain('Étape 2');
@@ -189,11 +191,13 @@ describe('PartiePage', () => {
     expect(texte()).toContain('après');
   });
 
-  it("n'envoie qu'un seul POST pour deux clics pendant la requête", async () => {
+  it("n'envoie qu'un seul POST : pendant la requête, le bouton a disparu", async () => {
     await ouvrirEnDirect(vueFactice());
-    bouton('Retourner')!.click();
+    const premier = bouton('Retourner')!;
+    premier.click();
     harness.detectChanges();
-    bouton('Retourner')!.click();
+    expect(bouton('Retourner')).toBeUndefined();
+    premier.click();
     const requetes = http.match('/api/parties/p1/actions/');
     expect(requetes.length).toBe(1);
     requetes[0].flush({ vue: vueFactice(), etapes: [] });
@@ -319,5 +323,135 @@ describe('PartiePage', () => {
     const requete = http.expectOne('/api/parties/courante/');
     await harness.navigateByUrl('/');
     expect(requete.cancelled).toBe(true);
+  });
+
+  describe('plis', () => {
+    /** La vue factice, chaque siège avec une carte dans sa zone « pli » si `complet`. */
+    function vueAvecPli(complet: boolean, marque = 'pli', version?: number): VueTable {
+      const base = vueMarquee(vueFactice(), marque, version);
+      const plis = base.sieges.map((s, i) => ({
+        id: `pli-${s.id}`,
+        type: 'pli' as const,
+        siege: s.id,
+        libelle: 'Pli',
+        nombre: null,
+        cartes:
+          complet || i === 0 ? [{ id: `${i + 2}H-1`, valeur: String(i + 2), enseigne: 'H' }] : [],
+        groupes: [],
+      }));
+      return { ...base, zones: [...base.zones, ...plis] };
+    }
+    const cartesDesPlis = () => racine().querySelectorAll('.pli-siege app-carte').length;
+
+    it(`un pli terminé reste ${DELAI_PLI} ms pendant la relecture, les autres étapes ${DELAI_ETAPE} ms`, async () => {
+      vi.useFakeTimers();
+      await ouvrirApresCreation({
+        id: 'p1',
+        vue: vueAvecPli(false, 'finale'),
+        etapes: [
+          { message: 'Le pli est remporté.', vue: vueAvecPli(true) },
+          { message: 'Suite', vue: vueAvecPli(false, 'suite') },
+        ],
+      });
+      expect(bandeau()?.textContent).toContain('Le pli est remporté.');
+      vi.advanceTimersByTime(DELAI_ETAPE);
+      harness.detectChanges();
+      expect(bandeau()?.textContent).toContain('Le pli est remporté.');
+      vi.advanceTimersByTime(DELAI_PLI - DELAI_ETAPE);
+      harness.detectChanges();
+      expect(bandeau()?.textContent).toContain('Suite');
+    });
+
+    it(`dans la vue finale, un pli terminé est ramassé après ${DELAI_PLI} ms`, async () => {
+      vi.useFakeTimers();
+      await ouvrirEnDirect(vueAvecPli(true));
+      expect(cartesDesPlis()).toBe(3);
+      vi.advanceTimersByTime(DELAI_PLI - 1);
+      harness.detectChanges();
+      expect(cartesDesPlis()).toBe(3);
+      vi.advanceTimersByTime(1);
+      harness.detectChanges();
+      expect(cartesDesPlis()).toBe(0);
+    });
+
+    it('un pli déjà montré par la relecture est ramassé dès la vue finale, sans second délai', async () => {
+      vi.useFakeTimers();
+      await ouvrirApresCreation({
+        id: 'p1',
+        vue: vueAvecPli(true, 'finale'),
+        etapes: [{ message: 'Le pli est remporté.', vue: vueAvecPli(true) }],
+      });
+      expect(cartesDesPlis()).toBe(3);
+      vi.advanceTimersByTime(DELAI_PLI);
+      harness.detectChanges();
+      expect(bandeau()).toBeNull();
+      expect(cartesDesPlis()).toBe(0);
+    });
+
+    it('un clic sur la table ramasse le pli terminé sans attendre', async () => {
+      await ouvrirEnDirect(vueAvecPli(true));
+      racine().querySelector<HTMLElement>('app-table')!.click();
+      harness.detectChanges();
+      expect(cartesDesPlis()).toBe(0);
+    });
+
+    it('« Revoir le dernier pli » montre ses cartes et qui les a jouées, puis se ferme', async () => {
+      await ouvrirEnDirect(vueAvecPli(true));
+      racine().querySelector<HTMLElement>('app-table')!.click();
+      harness.detectChanges();
+      bouton('Revoir le dernier pli')!.click();
+      harness.detectChanges();
+      const dialogue = racine().querySelector('.revoir-pli')!;
+      expect(dialogue.querySelectorAll('app-carte').length).toBe(3);
+      const noms = vueFactice().sieges.map((s) => s.nom);
+      expect(
+        Array.from(dialogue.querySelectorAll('li span')).map((s) => s.textContent?.trim()),
+      ).toEqual(noms);
+      bouton('Fermer')!.click();
+      harness.detectChanges();
+      expect(racine().querySelector('.revoir-pli')).toBeNull();
+    });
+
+    it('le dernier pli rappelle le message de son étape : qui l’a remporté', async () => {
+      vi.useFakeTimers();
+      await ouvrirApresCreation({
+        id: 'p1',
+        vue: vueAvecPli(true, 'finale'),
+        etapes: [{ message: 'Ordinateur 1 remporte le pli.', vue: vueAvecPli(true) }],
+      });
+      vi.advanceTimersByTime(DELAI_PLI);
+      harness.detectChanges();
+      bouton('Revoir le dernier pli')!.click();
+      harness.detectChanges();
+      expect(racine().querySelector('.revoir-pli .message-pli')?.textContent?.trim()).toBe(
+        'Ordinateur 1 remporte le pli.',
+      );
+    });
+
+    it('sans pli terminé, pas de bouton « Revoir le dernier pli »', async () => {
+      await ouvrirEnDirect(vueAvecPli(false));
+      expect(bouton('Revoir le dernier pli')).toBeUndefined();
+    });
+  });
+
+  it('quand le jeu attend le joueur, sa main s’allume et la barre dit « À toi de jouer »', async () => {
+    await ouvrirEnDirect(vueFactice());
+    expect(racine().querySelector('.siege[data-siege="0"]')!.classList).toContain('a-toi');
+    expect(racine().querySelector('app-actions .etat')?.textContent?.trim()).toBe('À toi de jouer');
+  });
+
+  it('pendant la relecture, ni lueur ni « À toi de jouer »', async () => {
+    vi.useFakeTimers();
+    await ouvrirApresCreation(creee());
+    expect(racine().querySelector('.siege[data-siege="0"]')!.classList).not.toContain('a-toi');
+    expect(racine().querySelector('app-actions .etat')?.textContent?.trim()).not.toBe(
+      'À toi de jouer',
+    );
+  });
+
+  it('le panneau ne contient aucune action : elles sont dans la barre sous la table', async () => {
+    await ouvrirEnDirect(vueFactice());
+    expect(racine().querySelector('.panneau app-menu button')).toBeNull();
+    expect(racine().querySelector('app-actions button')?.textContent?.trim()).toBe('Retourner');
   });
 });

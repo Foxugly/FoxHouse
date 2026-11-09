@@ -50,8 +50,8 @@ const CW_AUTRES_MIN = 20;
  * de chacune (leur coin reste lisible) ; en dessous, `PAS_MIN`.
  */
 const CW_CHEVAUCHEMENT = 48;
-/** Les textes de la table grandissent avec les cartes : ×1 à `CW_TEXTE`, jusqu'à `TEXTE_MAX`. */
-const CW_TEXTE = 50;
+/** Les textes de la table grandissent avec les cartes : ×1 jusqu'à `CW_TEXTE` px, puis en proportion jusqu'à `TEXTE_MAX`. */
+const CW_TEXTE = 40;
 const TEXTE_MAX = 1.4;
 /** Pas entre deux cartes d'un groupe : assez pour lire l'index, sur une seule rangée. */
 const PAS_GROUPE = 0.45;
@@ -350,6 +350,8 @@ function convient(places: PlaceSiege[], l: number, h: number, cw: number): boole
 export class TableComponent {
   readonly vue = input.required<VueTable>();
   readonly selection = input<Selection>({ cartes: [], cible: null });
+  /** Le jeu attend un coup du joueur : sa main s'allume. */
+  readonly aToi = input(false);
   readonly basculer = output<string>();
   readonly choisirCible = output<string | null>();
 

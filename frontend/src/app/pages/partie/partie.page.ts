@@ -10,16 +10,20 @@ import {
   inject,
   Injector,
   signal,
+  untracked,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { ApiService, ErreurApi, PartieCreee, ResultatCoup } from '../../core/api.service';
 import { Action, VueTable } from '../../core/vue';
+import { ActionsComponent } from '../../tapis/actions/actions.component';
+import { CarteComponent } from '../../tapis/carte/carte.component';
 import { MenuComponent } from '../../tapis/menu/menu.component';
 import { basculer, choisirCible, Selection } from '../../tapis/selection';
 import { TableComponent } from '../../tapis/table/table.component';
 import { prendreEtatNavigation } from '../etat-navigation';
-import { Relecture } from './relecture';
+import { CartePli, cartesDuPli, DELAI_PLI, pliTermine, sansPli } from './plis';
+import { DELAI_ETAPE, Relecture } from './relecture';
 
 export const AUCUNE_PARTIE = 'Aucune partie en cours.';
 
@@ -33,7 +37,7 @@ function partieRecue(valeur: unknown): PartieCreee | null {
 
 @Component({
   selector: 'app-partie-page',
-  imports: [TableComponent, MenuComponent],
+  imports: [TableComponent, MenuComponent, ActionsComponent, CarteComponent],
   templateUrl: './partie.page.html',
   styleUrl: './partie.page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -54,14 +58,36 @@ export class PartiePage {
   protected readonly occupe = signal(false);
   protected readonly erreur = signal<string | null>(null);
   protected readonly confirmation = signal(false);
-  protected readonly relecture = new Relecture();
+  /** Un pli terminé reste `DELAI_PLI` ms sur la table, les autres étapes `DELAI_ETAPE`. */
+  protected readonly relecture = new Relecture((e) =>
+    pliTermine(e.vue) ? DELAI_PLI : DELAI_ETAPE,
+  );
+  /** Version de la vue finale dont le pli terminé a été ramassé (après `DELAI_PLI` ou un clic). */
+  private readonly pliRamasse = signal<number | null>(null);
+  /** Le dernier pli terminé qu'a montré la table, pour « Revoir le dernier pli ». */
+  protected readonly dernierPli = signal<CartePli[] | null>(null);
+  /** Le message de l'étape qui a terminé ce pli (qui l'a remporté), s'il est passé en relecture. */
+  protected readonly messageDernierPli = signal<string | null>(null);
+  protected readonly revoirPli = signal(false);
+  /** Le dernier pli terminé montré par la relecture : il a déjà eu ses `DELAI_PLI` ms. */
+  private readonly pliDejaMontre = signal<string | null>(null);
 
-  /** Pendant la relecture, la table montre l'étape ; ensuite, la vue finale. */
-  protected readonly vueAffichee = computed(() => this.relecture.etape()?.vue ?? this.vue());
+  /**
+   * Pendant la relecture, la table montre l'étape ; ensuite, la vue finale, sans son pli terminé une
+   * fois celui-ci ramassé.
+   */
+  protected readonly vueAffichee = computed(() => {
+    const etape = this.relecture.etape();
+    if (etape) return etape.vue;
+    const vue = this.vue();
+    return vue && this.pliRamasse() === vue.version && pliTermine(vue) ? sansPli(vue) : vue;
+  });
   protected readonly selectionAffichee = computed(() =>
     this.relecture.enCours() ? SELECTION_VIDE : this.selection(),
   );
   protected readonly bloque = computed(() => this.occupe() || this.relecture.enCours());
+  /** Le jeu attend un coup du joueur : la table et la barre d'actions le montrent. */
+  protected readonly aToi = computed(() => !this.bloque() && !!this.vue()?.actions.length);
 
   constructor() {
     this.destroyRef.onDestroy(() => this.relecture.arreter());
@@ -71,9 +97,40 @@ export class PartiePage {
     effect(() => {
       const maintenant = this.relecture.enCours();
       if (enCours && !maintenant && this.focusDans('.bandeau')) {
-        this.focaliserApresRendu('app-menu button:not(:disabled)', '.panneau button');
+        this.focaliserApresRendu('app-actions button:not(:disabled)', '.panneau button');
       }
       enCours = maintenant;
+    });
+    // Chaque pli terminé que montre la table devient « le dernier pli ».
+    effect(() => {
+      const etape = this.relecture.etape();
+      const vue = etape?.vue ?? this.vue();
+      const pli = vue ? cartesDuPli(vue) : null;
+      if (!pli) return;
+      const signature = JSON.stringify(pli);
+      // Lu sans dépendance : l'effet écrit lui-même `dernierPli`.
+      const avant = untracked(() => this.dernierPli());
+      if (signature !== JSON.stringify(avant)) {
+        this.dernierPli.set(pli);
+        this.messageDernierPli.set(null);
+      }
+      if (etape) {
+        this.pliDejaMontre.set(signature);
+        this.messageDernierPli.set(etape.message);
+      }
+    });
+    // Un pli terminé dans la vue finale est ramassé après DELAI_PLI ms, ou tout de suite si la
+    // relecture vient de le montrer (ou de le sauter d'un clic).
+    effect((nettoyer) => {
+      const vue = this.vue();
+      if (this.relecture.enCours() || !vue || !pliTermine(vue)) return;
+      if (this.pliRamasse() === vue.version) return;
+      if (this.pliDejaMontre() === JSON.stringify(cartesDuPli(vue))) {
+        this.pliRamasse.set(vue.version);
+        return;
+      }
+      const minuterie = setTimeout(() => this.pliRamasse.set(vue.version), DELAI_PLI);
+      nettoyer(() => clearTimeout(minuterie));
     });
     const partie = partieRecue(prendreEtatNavigation(inject(Location), 'partie'));
     if (partie) {
@@ -153,9 +210,15 @@ export class PartiePage {
     this.selection.update((s) => choisirCible(s, idGroupe));
   }
 
-  /** Un clic sur la table pendant la relecture saute à la vue finale. */
+  /** Un clic sur la table saute à la vue finale, et ramasse un pli terminé sans attendre. */
   protected passer(): void {
-    this.relecture.passer();
+    if (this.relecture.enCours()) return this.relecture.passer();
+    const vue = this.vue();
+    if (vue && pliTermine(vue)) this.pliRamasse.set(vue.version);
+  }
+
+  protected basculerRevoirPli(): void {
+    this.revoirPli.update((v) => !v);
   }
 
   /** Une partie terminée se quitte sans confirmation. */

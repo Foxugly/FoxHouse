@@ -15,11 +15,81 @@
     max(16px, env(safe-area-inset-right, 0px));
 }
 
+/* La table, puis la barre d'actions dessous : la table prend toute la hauteur restante. */
+.colonne-table {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  gap: 10px;
+  min-width: 0;
+  min-height: 0;
+}
+
 /* La table mesure cette zone : elle doit avoir une vraie hauteur. */
 .zone-table {
   position: relative;
   min-width: 0;
   min-height: 0;
+}
+
+/* « Revoir le dernier pli » : les cartes du pli et qui les a jouées, par-dessus la table. */
+.revoir-pli {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 20;
+  display: grid;
+  gap: 12px;
+  justify-items: center;
+  max-width: calc(100% - 32px);
+  padding: 16px 20px;
+  color: var(--texte);
+  background: var(--panneau);
+  border: 1px solid var(--trait);
+  border-radius: 14px;
+  box-shadow: 0 8px 30px rgb(0 0 0 / 40%);
+  transform: translate(-50%, -50%);
+}
+
+.revoir-pli h2 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.revoir-pli .message-pli {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--attenue);
+  text-align: center;
+}
+
+.revoir-pli ul {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.revoir-pli li {
+  display: grid;
+  gap: 4px;
+  justify-items: center;
+  font-size: 0.8rem;
+}
+
+.revoir-pli button {
+  min-height: 36px;
+  padding: 6px 16px;
+  font:
+    500 0.85rem system-ui,
+    sans-serif;
+  color: #fff;
+  background: var(--bouton);
+  border: 0;
+  border-radius: 8px;
+  cursor: pointer;
 }
 
 .panneau {
@@ -46,7 +116,8 @@
     max-height: 45dvh;
   }
 
-  /* « Nouvelle partie » devient un petit bouton texte, aligné à droite. */
+  /* « Revoir le dernier pli » et « Nouvelle partie » deviennent de petits boutons texte. */
+  .panneau > button.revoir,
   .panneau > button.nouvelle {
     justify-self: end;
     min-height: 32px;

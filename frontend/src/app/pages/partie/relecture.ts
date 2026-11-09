@@ -10,13 +10,15 @@ export function etapeAuPas(etapes: readonly Etape[], pas: number): Etape | null 
 }
 
 /**
- * Rejoue des étapes une à une, une toutes les `DELAI_ETAPE` ms. Tant qu'`enCours` est vrai, la page
- * montre `etape()` ; ensuite elle montre sa vue finale.
+ * Rejoue des étapes une à une, chacune pendant `delai(etape)` ms (`DELAI_ETAPE` par défaut). Tant
+ * qu'`enCours` est vrai, la page montre `etape()` ; ensuite elle montre sa vue finale.
  */
 export class Relecture {
   private readonly etapes = signal<readonly Etape[]>([]);
   private readonly pas = signal(0);
   private minuterie: ReturnType<typeof setTimeout> | null = null;
+
+  constructor(private readonly delai: (etape: Etape) => number = () => DELAI_ETAPE) {}
 
   readonly etape = computed(() => etapeAuPas(this.etapes(), this.pas()));
   readonly enCours = computed(() => this.etape() !== null);
@@ -45,11 +47,12 @@ export class Relecture {
   }
 
   private programmer(): void {
-    if (!this.enCours()) return;
+    const etape = this.etape();
+    if (!etape) return;
     this.minuterie = setTimeout(() => {
       this.minuterie = null;
       this.pas.update((p) => p + 1);
       this.programmer();
-    }, DELAI_ETAPE);
+    }, this.delai(etape));
   }
 }
