@@ -81,13 +81,20 @@ Architecture (`src/app/`) :
   joueur gardent 34 px, celles des autres rétrécissent. Les textes de la table grandissent avec les
   cartes (`--echelle-texte`, ×1 à ×1,4). `main/` (cartes superposées, en autant de rangées qu'il
   faut pour que le coin de chaque carte reste visible ; une carte n'est jamais recouverte à plus de
-  75 %), `carte/`, `menu/` (lignes du menu et un bouton par action,
-  ce qui manque à la sélection écrit sous un bouton inactif), `selection.ts` (cartes choisies et
+  75 %), `carte/`, `menu/` (le panneau d'informations, lignes du menu seulement, **aucune
+  action**), `actions/` (la barre sous la table : « À toi de jouer » et un bouton par action quand
+  le jeu attend le joueur, sinon « En attente des autres joueurs… » ; place toujours réservée pour
+  que la table ne change pas de taille ; ce qui manque à la sélection écrit sous un bouton
+  inactif), `selection.ts` (cartes choisies et
   cible ; un bouton n'est actif que si `cartes_min ≤ sélection ≤ cartes_max` et la cible demandée
   est choisie ; une action `direct` n'a pas de bouton : le clic sur une carte l'envoie avec cette
-  seule carte, et le menu l'écrit en consigne), `disposition.ts` (calculs de placement, sans Angular).
+  seule carte, et la barre l'écrit en consigne), `disposition.ts` (calculs de placement, sans Angular).
+  Quand c'est au joueur, sa main s'entoure de l'accent (`aToi` de la table).
 - `pages/` — `accueil` (formulaire généré depuis `GET jeux/`, reprise de la partie courante),
-  `partie` (table + menu, envoi des actions, relecture des `etapes` avant la vue finale) et `regles`
+  `partie` (table + barre d'actions + panneau, envoi des actions, relecture des `etapes` avant la
+  vue finale ; **plis** dans `partie/plis.ts` : un pli est terminé quand chaque zone `pli` a sa
+  carte — l'étape reste alors `DELAI_PLI` (5 s) au lieu de 700 ms, la vue finale le ramasse après
+  5 s ou d'un clic, et « Revoir le dernier pli » le remontre avec le message de son étape) et `regles`
   (un onglet par jeu, `?jeu=<code>`, texte tiré de `regles` de `GET jeux/`).
 - `src/testing/` — vues d'exemple (`vues.ts`) tirées du serveur, dont `factice.json`.
 

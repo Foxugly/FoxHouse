@@ -47,6 +47,29 @@
   border-radius: 99px;
 }
 
+/* À toi de jouer : ta main s'entoure de la couleur de l'accent, qui respire doucement. */
+.siege.a-toi .zones-siege {
+  border-radius: 12px;
+  box-shadow:
+    0 0 0 3px var(--accent),
+    0 0 22px 4px var(--accent);
+  animation: a-toi 1.6s ease-in-out infinite;
+}
+
+@keyframes a-toi {
+  50% {
+    box-shadow:
+      0 0 0 3px var(--accent),
+      0 0 8px 0 var(--accent);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .siege.a-toi .zones-siege {
+    animation: none;
+  }
+}
+
 .siege.actif .nom {
   color: #2b220a;
   background: var(--accent);

@@ -3,7 +3,7 @@ import { TestBed } from '@angular/core/testing';
 import { describe, expect, it } from 'vitest';
 import { Action } from '../core/vue';
 import { vueFactice } from '../../testing/vues';
-import { MenuComponent } from './menu/menu.component';
+import { ActionsComponent } from './actions/actions.component';
 import { TableComponent } from './table/table.component';
 
 /**
@@ -39,8 +39,8 @@ describe('généricité du tapis', () => {
     expect(racine.querySelectorAll('img').length).toBeGreaterThan(0);
   });
 
-  it('le menu rend la vue du jeu factice et « Retourner » est cliquable', () => {
-    const fixture = TestBed.createComponent(MenuComponent);
+  it('la barre d’actions rend la vue du jeu factice et « Retourner » est cliquable', () => {
+    const fixture = TestBed.createComponent(ActionsComponent);
     fixture.componentRef.setInput('vue', vueFactice());
     fixture.detectChanges();
     const emises: Action[] = [];

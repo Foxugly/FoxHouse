@@ -1,30 +1,70 @@
 @if (vueAffichee(); as vue) {
   <div class="page">
-    <!-- Pendant la relecture, un clic sur la table saute à la vue finale. Au clavier, c'est le
-         bouton « Passer » du bandeau : la zone n'a pas à être focalisable. -->
-    <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
-    <div class="zone-table" (click)="passer()">
-      @if (relecture.etape(); as etape) {
-        <div class="bandeau" role="status">
-          <span class="message">{{ etape.message }}</span>
-          <button type="button" (click)="passer()">Passer</button>
-        </div>
-      }
-      <app-table
-        [vue]="vue"
-        [selection]="selectionAffichee()"
-        (basculer)="basculer($event)"
-        (choisirCible)="choisirCible($event)"
-      />
-    </div>
+    <div class="colonne-table">
+      <!-- Un clic sur la table saute la relecture ou ramasse un pli terminé. Au clavier, c'est le
+           bouton « Passer » du bandeau : la zone n'a pas à être focalisable. -->
+      <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
+      <div class="zone-table" (click)="passer()">
+        @if (relecture.etape(); as etape) {
+          <div class="bandeau" role="status">
+            <span class="message">{{ etape.message }}</span>
+            <button type="button" (click)="passer()">Passer</button>
+          </div>
+        }
+        <app-table
+          [vue]="vue"
+          [selection]="selectionAffichee()"
+          [aToi]="aToi()"
+          (basculer)="basculer($event)"
+          (choisirCible)="choisirCible($event)"
+        />
+        @if (revoirPli() && dernierPli(); as pli) {
+          <!-- Le clic dans le dialogue ne doit pas atteindre la table (il ramasserait le pli). -->
+          <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events -->
+          <section
+            class="revoir-pli"
+            role="dialog"
+            aria-labelledby="titre-dernier-pli"
+            (click)="$event.stopPropagation()"
+          >
+            <h2 id="titre-dernier-pli">Dernier pli</h2>
+            @if (messageDernierPli(); as message) {
+              <p class="message-pli">{{ message }}</p>
+            }
+            <ul>
+              @for (c of pli; track $index) {
+                <li>
+                  <app-carte [carte]="c.carte" [largeur]="56" />
+                  <span>{{ c.nom }}</span>
+                </li>
+              }
+            </ul>
+            <button type="button" (click)="basculerRevoirPli()">Fermer</button>
+          </section>
+        }
+      </div>
 
-    <aside class="panneau">
-      <app-menu
+      <app-actions
         [vue]="vue"
         [selection]="selectionAffichee()"
         [occupe]="bloque()"
         (agir)="agir($event)"
       />
+    </div>
+
+    <aside class="panneau">
+      <app-menu [vue]="vue" />
+
+      @if (dernierPli()) {
+        <button
+          type="button"
+          class="secondaire revoir"
+          [attr.aria-pressed]="revoirPli()"
+          (click)="basculerRevoirPli()"
+        >
+          Revoir le dernier pli
+        </button>
+      }
 
       @if (erreur(); as message) {
         <div class="erreur" role="alert">

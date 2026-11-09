@@ -5,6 +5,7 @@
     class="siege"
     [class.joueur]="p.joueur"
     [class.actif]="p.siege.actif"
+    [class.a-toi]="p.joueur && aToi()"
     [attr.data-siege]="p.siege.id"
     [attr.aria-label]="p.siege.nom"
     [attr.aria-current]="p.siege.actif ? 'true' : null"
