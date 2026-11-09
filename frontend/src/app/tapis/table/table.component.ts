@@ -15,6 +15,8 @@ import { CarteComponent, RAPPORT_CARTE } from '../carte/carte.component';
 import {
   Cadre,
   largeurCarte,
+  PART_VISIBLE_MIN,
+  PAS_MIN,
   pasCartes,
   placerCentre,
   Point,
@@ -35,6 +37,14 @@ const HAUTEUR_DEFAUT = 560;
 const REMONTEE_JOUEUR = 0.88;
 /** Les mains des autres sièges sont plus petites. */
 const ECHELLE_AUTRES = 0.62;
+/**
+ * Sur une table d'ordinateur (au moins cette largeur), les cartes du joueur sont deux fois plus
+ * grandes et peuvent se chevaucher jusqu'à ne montrer que `PART_VISIBLE_MIN` de chacune ; sa main
+ * ne prend jamais plus de `PART_HAUTEUR_MAIN` de la hauteur de la table.
+ */
+const LARGEUR_BUREAU = 600;
+const ECHELLE_JOUEUR_BUREAU = 2;
+const PART_HAUTEUR_MAIN = 0.3;
 /** Cartes des groupes et des zones du centre. */
 const ECHELLE_GROUPE = 0.75;
 const ECHELLE_CENTRE = 0.9;
@@ -49,6 +59,8 @@ interface ZoneSiege {
   zone: Zone;
   cw: number;
   largeur: number;
+  /** Pas minimal entre ses cartes, en largeurs de carte. */
+  pasMin: number;
 }
 
 interface PliSiege {
@@ -113,8 +125,8 @@ function cadreSiege(place: PlaceSiege): Cadre {
     place.largeurMax,
     Math.max(LARGEUR_ETIQUETTES, ...place.zones.map((z) => z.largeur)),
   );
-  const cartes = place.zones.map(({ zone, cw, largeur: dispo }) => {
-    const { rangees } = pasCartes(zone.cartes.length, cw, dispo);
+  const cartes = place.zones.map(({ zone, cw, largeur: dispo, pasMin }) => {
+    const { rangees } = pasCartes(zone.cartes.length, cw, dispo, pasMin);
     return cw * (RAPPORT_CARTE + (rangees - 1) * 0.7);
   });
   const hauteur =
@@ -162,10 +174,10 @@ function largeurEntreVoisins(
 
 /**
  * Largeur sous laquelle la main du joueur n'est plus utilisable : ses cartes sur deux rangées au
- * pas minimal de `pasCartes`.
+ * pas minimal `pasMin` de `pasCartes`.
  */
-function largeurMainUtile(nb: number, cw: number): number {
-  return cw * (1 + 0.42 * Math.max(0, Math.ceil(nb / 2) - 1));
+function largeurMainUtile(nb: number, cw: number, pasMin: number): number {
+  return cw * (1 + pasMin * Math.max(0, Math.ceil(nb / 2) - 1));
 }
 
 /**
@@ -215,6 +227,21 @@ export class TableComponent {
   protected readonly cwGroupe = computed(() => this.cw() * ECHELLE_GROUPE);
   protected readonly cwCentre = computed(() => this.cw() * ECHELLE_CENTRE);
 
+  /** Table d'ordinateur : les cartes du joueur grandissent et peuvent se chevaucher davantage. */
+  private readonly bureau = computed(() => this.largeur() >= LARGEUR_BUREAU);
+  private readonly cwJoueur = computed(() =>
+    this.bureau()
+      ? Math.max(
+          this.cw(),
+          Math.min(
+            ECHELLE_JOUEUR_BUREAU * this.cw(),
+            (PART_HAUTEUR_MAIN * this.hauteur()) / RAPPORT_CARTE,
+          ),
+        )
+      : this.cw(),
+  );
+  private readonly pasMinJoueur = computed(() => (this.bureau() ? PART_VISIBLE_MIN : PAS_MIN));
+
   /** La main du joueur se sélectionne seulement si une action prend des cartes. */
   private readonly mainSelectionnable = computed(() =>
     this.vue().actions.some((a) => a.cartes_max > 0),
@@ -224,27 +251,41 @@ export class TableComponent {
     const { sieges, zones } = this.vue();
     const l = this.largeur();
     const h = this.hauteur();
-    const cw = this.cw();
-    const cwAutres = cw * ECHELLE_AUTRES;
+    const cwAutres = this.cw() * ECHELLE_AUTRES;
+    const pasMinJoueur = this.pasMinJoueur();
     const n = sieges.length;
-    // Le siège du joueur remonte vers le centre, et assez pour ne pas déborder sur le bord.
-    const basJoueur = h - BORD_TABLE - demiHauteurSiege(cw, 2);
-    const positions = positionsSieges(n, l, h).map((p, i) =>
-      i === 0 ? { x: p.x, y: Math.min(basJoueur, h / 2 + (p.y - h / 2) * REMONTEE_JOUEUR) } : p,
-    );
-    const largeursMains = positions.map(({ x }) =>
-      Math.max(cwAutres, Math.min(l / (n * 0.55), 150, 2 * Math.min(x, l - x))),
-    );
     const largeurPleine = Math.min(0.7 * l, l - 40);
     const nbJoueur = zones.find((z) => z.siege === sieges[0]?.id && z.type === 'main')?.cartes
       .length;
-    const libre = largeurEntreVoisins(positions, largeursMains, cw, cwAutres);
-    if (libre >= Math.min(largeurPleine, largeurMainUtile(nbJoueur ?? 0, cw))) {
+    const utile = (cwJ: number) => largeurMainUtile(nbJoueur ?? 0, cwJ, pasMinJoueur);
+    const agencer = (cwJ: number) => {
+      // Le siège du joueur remonte vers le centre, et assez pour ne pas déborder sur le bord.
+      const basJoueur = h - BORD_TABLE - demiHauteurSiege(cwJ, 2);
+      const positions = positionsSieges(n, l, h).map((p, i) =>
+        i === 0 ? { x: p.x, y: Math.min(basJoueur, h / 2 + (p.y - h / 2) * REMONTEE_JOUEUR) } : p,
+      );
+      const largeursMains = positions.map(({ x }) =>
+        Math.max(cwAutres, Math.min(l / (n * 0.55), 150, 2 * Math.min(x, l - x))),
+      );
+      const libre = largeurEntreVoisins(positions, largeursMains, cwJ, cwAutres);
+      return { positions, largeursMains, libre };
+    };
+    // Les cartes du joueur ont leur propre taille (plus grandes sur ordinateur). Si sa main ainsi
+    // agrandie ne tient plus entre ses voisins, elles rétrécissent juste assez pour y tenir sur
+    // deux rangées, jamais sous la taille des autres cartes.
+    let cw = this.cwJoueur();
+    let { positions, largeursMains, libre } = agencer(cw);
+    if (cw > this.cw() && libre < Math.min(largeurPleine, utile(cw))) {
+      const tient = libre / (utile(cw) / cw);
+      cw = Math.max(this.cw(), Math.min(cw, tient));
+      ({ positions, largeursMains, libre } = agencer(cw));
+    }
+    if (libre >= Math.min(largeurPleine, utile(cw))) {
       largeursMains[0] = Math.max(cw, Math.min(largeurPleine, libre));
     } else {
       // Trop étroit entre les voisins : la main garde sa largeur, les voisins remontent.
       largeursMains[0] = Math.max(cw, largeurPleine);
-      const { rangees } = pasCartes(nbJoueur ?? 0, cw, largeursMains[0]);
+      const { rangees } = pasCartes(nbJoueur ?? 0, cw, largeursMains[0], pasMinJoueur);
       remonterVoisins(
         positions,
         largeursMains,
@@ -257,6 +298,7 @@ export class TableComponent {
       const joueur = i === 0;
       const { x, y } = positions[i];
       const cwSiege = joueur ? cw : cwAutres;
+      const pasMin = joueur ? pasMinJoueur : PAS_MIN;
       const largeurMain = largeursMains[i];
       return {
         siege,
@@ -269,6 +311,7 @@ export class TableComponent {
           .map((zone) => ({
             zone,
             cw: cwSiege,
+            pasMin,
             largeur:
               zone.type === 'main'
                 ? largeurMain

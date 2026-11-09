@@ -247,21 +247,36 @@ describe('TableComponent', () => {
     expect(z[0]).toBeGreaterThan(Math.max(...z.slice(1)));
   });
 
-  it('à 10 sièges, la main du joueur ne passe pas sous ses voisins', () => {
-    const f = monter(vueDixSieges());
-    const joueur = mesures(f, 0);
-    expect(joueur.main).toBeLessThan(0.7 * 800);
-    for (const id of [1, 9]) {
-      const voisin = mesures(f, id);
-      expect(Math.abs(voisin.x - joueur.x) - voisin.main / 2).toBeGreaterThanOrEqual(
-        joueur.main / 2,
-      );
-    }
-  });
+  /** Vrai si le bloc du voisin est à côté de la main du joueur, ou au-dessus d'elle. */
+  function voisinDegage(f: ComponentFixture<TableComponent>, id: number): boolean {
+    const demi = (el: HTMLElement) =>
+      (parseFloat(el.querySelector<HTMLElement>('app-main')!.style.height) + 44) / 2;
+    const joueur = siege(f, 0);
+    const voisin = siege(f, id);
+    const [mj, mv] = [mesures(f, 0), mesures(f, id)];
+    const aCote = Math.abs(mv.x - mj.x) - mv.main / 2 >= mj.main / 2 - 1e-9;
+    const auDessus =
+      parseFloat(voisin.style.top) + demi(voisin) <=
+      parseFloat(joueur.style.top) - demi(joueur) + 1e-9;
+    return aCote || auDessus;
+  }
 
-  it('à 4 sièges, la main du joueur garde toute sa largeur', () => {
+  for (const [largeur, hauteur] of [
+    [800, 560],
+    [560, 520],
+  ]) {
+    it(`à 10 sièges (${largeur}×${hauteur}), la main du joueur ne passe pas sous ses voisins`, () => {
+      const f = monter(vueDixSieges());
+      dimensionner(f, largeur, hauteur);
+      expect(mesures(f, 0).main).toBeLessThanOrEqual(0.7 * largeur);
+      for (const id of [1, 9]) expect(voisinDegage(f, id)).toBe(true);
+    });
+  }
+
+  it('à 4 sièges, la main du joueur tient sur une rangée sans passer sous ses voisins', () => {
     const f = monter(vueDebut());
-    expect(mesures(f, 0).main).toBeCloseTo(0.7 * 800);
+    expect(new Set(cartesDuJoueur(f).map((c) => c.haut)).size).toBe(1);
+    for (const id of [1, 3]) expect(voisinDegage(f, id)).toBe(true);
   });
 
   it('Entrée sur un groupe ciblable le choisit', () => {
@@ -354,7 +369,8 @@ describe('TableComponent', () => {
         siege: s.id,
         libelle: 'Pli',
         nombre: null,
-        cartes: s.id === 2 ? [] : [{ id: `${s.id + 2}H-1`, valeur: String(s.id + 2), enseigne: 'H' }],
+        cartes:
+          s.id === 2 ? [] : [{ id: `${s.id + 2}H-1`, valeur: String(s.id + 2), enseigne: 'H' }],
         groupes: [],
       })),
     );
@@ -375,5 +391,54 @@ describe('TableComponent', () => {
       expect(signe(py - 280)).toBe(signe(sy - 280));
       expect(p.querySelectorAll('app-carte').length).toBe(1);
     }
+  });
+
+  it('sur ordinateur, les cartes du joueur sont deux fois plus grandes, celles des autres non', () => {
+    const f = monter(vueSieges(4));
+    dimensionner(f, 1000, 700);
+    // largeurCarte(1000, 700) = 62.
+    expect(cartesDuJoueur(f)[0].cw).toBeCloseTo(124);
+    const autre = siege(f, 2).querySelector<HTMLElement>('app-carte')!;
+    expect(parseFloat(autre.style.width)).toBeCloseTo(62 * 0.62);
+  });
+
+  it('sur ordinateur, la main du joueur ne dépasse pas 30 % de la hauteur de la table', () => {
+    const f = monter(vueSieges(4));
+    dimensionner(f, 1000, 400);
+    const cw = cartesDuJoueur(f)[0].cw;
+    expect(cw * (242.6669922 / 167.0869141)).toBeLessThanOrEqual(0.3 * 400 + 1e-9);
+    expect(cw).toBeGreaterThan(62 * 0.62);
+  });
+
+  it('sur un téléphone, les cartes du joueur gardent leur taille', () => {
+    const f = monter(vueSieges(6, 14));
+    dimensionner(f, 328, 520);
+    expect(cartesDuJoueur(f)[0].cw).toBeCloseTo(34);
+  });
+
+  for (const nb of [13, 26, 40]) {
+    it(`sur ordinateur, ${nb} cartes du joueur montrent toujours au moins 25 % de chacune`, () => {
+      const f = monter(vueSieges(4, nb));
+      dimensionner(f, 1000, 700);
+      const cartes = cartesDuJoueur(f);
+      const cw = cartes[0].cw;
+      const rangees = new Map<string, number[]>();
+      for (const c of cartes) rangees.set(c.haut, [...(rangees.get(c.haut) ?? []), c.gauche]);
+      for (const xs of rangees.values()) {
+        for (let i = 1; i < xs.length; i++) {
+          expect(xs[i] - xs[i - 1]).toBeGreaterThanOrEqual(0.25 * cw - 1e-9);
+        }
+      }
+      for (const c of cartes) {
+        expect(c.gauche).toBeGreaterThanOrEqual(0);
+        expect(c.gauche + cw).toBeLessThanOrEqual(1000);
+      }
+    });
+  }
+
+  it('la table est un stade : rayon des coins plafonné à la moitié du petit côté', () => {
+    const f = monter(vueFactice());
+    const feutre = racine(f).querySelector<HTMLElement>('.feutre')!;
+    expect(getComputedStyle(feutre).borderRadius).toBe('9999px');
   });
 });
