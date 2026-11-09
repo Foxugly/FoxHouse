@@ -38,7 +38,7 @@
   max-width: 100%;
   overflow: hidden;
   padding: 2px 8px;
-  font-size: 0.75rem;
+  font-size: calc(0.75rem * var(--echelle-texte, 1));
   font-weight: 600;
   color: #fff;
   text-overflow: ellipsis;
@@ -59,7 +59,7 @@
   justify-content: center;
   gap: 2px 8px;
   font:
-    500 0.68rem ui-monospace,
+    500 calc(0.68rem * var(--echelle-texte, 1)) ui-monospace,
     monospace;
   color: rgb(255 255 255 / 80%);
 }
@@ -123,7 +123,7 @@
   left: 8px;
   padding: 3px 6px;
   font:
-    500 0.62rem/1 ui-monospace,
+    500 calc(0.62rem * var(--echelle-texte, 1))/1 ui-monospace,
     monospace;
   color: var(--etiquette-texte);
   white-space: nowrap;
@@ -133,14 +133,14 @@
 
 .zone-siege > .libelle {
   font:
-    500 0.62rem/1 ui-monospace,
+    500 calc(0.62rem * var(--echelle-texte, 1))/1 ui-monospace,
     monospace;
   color: rgb(255 255 255 / 80%);
 }
 
 .nombre {
   font:
-    500 0.7rem ui-monospace,
+    500 calc(0.7rem * var(--echelle-texte, 1)) ui-monospace,
     monospace;
   color: #fff;
 }
@@ -167,7 +167,7 @@
 
 .groupe.en-attente .mention {
   font:
-    500 0.62rem/1.2 ui-monospace,
+    500 calc(0.62rem * var(--echelle-texte, 1))/1.2 ui-monospace,
     monospace;
   color: var(--accent);
 }

@@ -13,8 +13,14 @@ export interface PasCartes {
  * Sièges répartis à intervalles égaux sur une ellipse. Écran : y vers le bas ; le siège 0 est en
  * bas au centre, les suivants vont vers la gauche, le haut puis la droite (sens horaire).
  */
-export function positionsSieges(n: number, largeur: number, hauteur: number): Point[] {
-  const rx = largeur / 2 - Math.max(40, 0.08 * largeur);
+export function positionsSieges(
+  n: number,
+  largeur: number,
+  hauteur: number,
+  margeCote = 0,
+): Point[] {
+  // `margeCote` : distance minimale entre un siège des côtés et le bord, pour la place de sa main.
+  const rx = largeur / 2 - Math.max(40, 0.08 * largeur, Math.min(margeCote, 0.3 * largeur));
   const ry = hauteur / 2 - Math.max(40, 0.12 * hauteur);
   return Array.from({ length: n }, (_, i) => {
     const angle = Math.PI / 2 + (i * 2 * Math.PI) / n;

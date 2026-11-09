@@ -338,19 +338,11 @@ describe('TableComponent', () => {
     });
   }
 
-  it('à 6 sièges sur un téléphone, les voisins remontent au-dessus de la main du joueur', () => {
+  it('à 6 sièges sur un téléphone, les voisins sont à côté de la main du joueur ou au-dessus', () => {
     const f = monter(vueSieges(6, 14));
     dimensionner(f, 328, 520);
-    // Demi-hauteur d'un siège : sa main, plus le nom et les compteurs (44 px).
-    const demi = (el: HTMLElement) =>
-      (parseFloat(el.querySelector<HTMLElement>('app-main')!.style.height) + 44) / 2;
-    const joueur = siege(f, 0);
-    const hautJoueur = parseFloat(joueur.style.top) - demi(joueur);
-    expect(mesures(f, 0).main).toBeGreaterThan(200);
-    for (const id of [1, 5]) {
-      const voisin = siege(f, id);
-      expect(parseFloat(voisin.style.top) + demi(voisin)).toBeLessThanOrEqual(hautJoueur);
-    }
+    expect(new Set(cartesDuJoueur(f).map((c) => c.haut)).size).toBeLessThanOrEqual(2);
+    for (const id of [1, 5]) expect(voisinDegage(f, id)).toBe(true);
   });
 
   it('sur un téléphone, le siège du joueur reste sur le feutre, pas sur le bord', () => {
@@ -393,28 +385,101 @@ describe('TableComponent', () => {
     }
   });
 
-  it('sur ordinateur, les cartes du joueur sont deux fois plus grandes, celles des autres non', () => {
+  /** La largeur des cartes de la table, quand elles ont toutes la même. */
+  function largeurDesCartes(f: ComponentFixture<TableComponent>): number {
+    const largeurs = new Set(tous(f, 'app-carte').map((c) => c.style.width));
+    expect(largeurs.size).toBe(1);
+    return parseFloat([...largeurs][0]);
+  }
+
+  it('toutes les cartes de la table ont la même taille : joueur, autres sièges et centre', () => {
     const f = monter(vueSieges(4));
     dimensionner(f, 1000, 700);
-    // largeurCarte(1000, 700) = 62.
-    expect(cartesDuJoueur(f)[0].cw).toBeCloseTo(124);
-    const autre = siege(f, 2).querySelector<HTMLElement>('app-carte')!;
-    expect(parseFloat(autre.style.width)).toBeCloseTo(62 * 0.62);
+    expect(tous(f, '.centre app-carte').length).toBeGreaterThan(0);
+    expect(largeurDesCartes(f)).toBeGreaterThan(34);
   });
 
-  it('sur ordinateur, la main du joueur ne dépasse pas 30 % de la hauteur de la table', () => {
-    const f = monter(vueSieges(4));
-    dimensionner(f, 1000, 400);
-    const cw = cartesDuJoueur(f)[0].cw;
-    expect(cw * (242.6669922 / 167.0869141)).toBeLessThanOrEqual(0.3 * 400 + 1e-9);
-    expect(cw).toBeGreaterThan(62 * 0.62);
+  it('les cartes grandissent avec la table, sans dépasser le plafond', () => {
+    const tailles = [
+      [560, 420],
+      [800, 560],
+      [1100, 820],
+      [2400, 1600],
+    ].map(([l, h]) => {
+      const f = monter(vueSieges(4));
+      dimensionner(f, l, h);
+      return cartesDuJoueur(f)[0].cw;
+    });
+    for (let i = 1; i < tailles.length; i++) {
+      expect(tailles[i]).toBeGreaterThanOrEqual(tailles[i - 1]);
+    }
+    expect(tailles[2]).toBeGreaterThan(tailles[0]);
+    expect(tailles[3]).toBeLessThanOrEqual(96);
   });
 
-  it('sur un téléphone, les cartes du joueur gardent leur taille', () => {
+  it('plus de joueurs ou plus de cartes : des cartes plus petites ou égales', () => {
+    const taille = (n: number, nb: number) => {
+      const f = monter(vueSieges(n, nb));
+      dimensionner(f, 1000, 700);
+      return cartesDuJoueur(f)[0].cw;
+    };
+    expect(taille(8, 13)).toBeLessThanOrEqual(taille(4, 13));
+    expect(taille(8, 13)).toBeLessThan(taille(3, 13));
+    expect(taille(4, 40)).toBeLessThanOrEqual(taille(4, 13));
+  });
+
+  for (const n of [3, 4, 6, 8]) {
+    it(`sur ordinateur à ${n} sièges, aucun siège n'en recouvre un autre`, () => {
+      const f = monter(vueSieges(n));
+      dimensionner(f, 1000, 700);
+      const blocs = tous(f, '.siege').map((el) => {
+        const x = parseFloat(el.style.left);
+        const y = parseFloat(el.style.top);
+        const main = el.querySelector<HTMLElement>('app-main')!;
+        const [l, h] = [parseFloat(main.style.width), parseFloat(main.style.height)];
+        return { gauche: x - l / 2, droite: x + l / 2, haut: y - h / 2, bas: y + h / 2 };
+      });
+      for (let i = 0; i < blocs.length; i++) {
+        for (let j = i + 1; j < blocs.length; j++) {
+          const [a, b] = [blocs[i], blocs[j]];
+          const recouvre =
+            a.gauche < b.droite && b.gauche < a.droite && a.haut < b.bas && b.haut < a.bas;
+          expect(recouvre, `sièges ${i} et ${j}`).toBe(false);
+        }
+      }
+    });
+  }
+
+  it('les textes de la table grandissent avec les cartes, pas sur un téléphone', () => {
+    const grand = monter(vueSieges(4));
+    dimensionner(grand, 1100, 820);
+    expect(parseFloat(racine(grand).style.getPropertyValue('--echelle-texte'))).toBeGreaterThan(1);
+    const petit = monter(vueSieges(6, 14));
+    dimensionner(petit, 328, 520);
+    expect(parseFloat(racine(petit).style.getPropertyValue('--echelle-texte'))).toBe(1);
+  });
+
+  it('sur un petit écran, les cartes du joueur gardent la taille minimale, les autres au plus', () => {
     const f = monter(vueSieges(6, 14));
     dimensionner(f, 328, 520);
     expect(cartesDuJoueur(f)[0].cw).toBeCloseTo(34);
+    for (const c of tous(f, '.siege:not(.joueur) app-carte')) {
+      expect(parseFloat(c.style.width)).toBeLessThanOrEqual(34);
+    }
   });
+
+  for (const [n, l, h] of [
+    [3, 800, 560],
+    [4, 1000, 700],
+    [5, 1100, 820],
+    [6, 1100, 820],
+  ]) {
+    it(`à ${n} sièges sur ${l}×${h}, une seule taille pour toutes les cartes`, () => {
+      const f = monter(vueSieges(n));
+      dimensionner(f, l, h);
+      expect(largeurDesCartes(f)).toBeGreaterThanOrEqual(34);
+    });
+  }
 
   for (const nb of [13, 26, 40]) {
     it(`sur ordinateur, ${nb} cartes du joueur montrent toujours au moins 25 % de chacune`, () => {
