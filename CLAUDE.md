@@ -74,10 +74,13 @@ Architecture (`src/app/`) :
 - `core/` — types de la vue (`vue.ts`, miroir du schéma `tapis/vue.py`), client de l'API
   (`api.service.ts`, erreurs en `ErreurApi`), Sentry.
 - `tapis/` — la table, commune à tous les jeux : `table/` (tapis en stade, sièges sur une ellipse,
-  zones du centre, panneau de résultat ; sur une table d'au moins 600 px, les cartes du joueur sont
-  deux fois plus grandes — rétrécies juste assez si sa main ne tient plus entre ses voisins, et
-  jamais plus de 30 % de la hauteur), `main/` (cartes superposées, en autant de rangées qu'il faut
-  pour que le coin de chaque carte reste visible ; une carte n'est jamais recouverte à plus de
+  zones du centre, panneau de résultat). **Toutes les cartes de la table ont la même largeur** : la
+  plus grande (de 1/12 du côté utile, 96 px au plus, à 34 px au moins) pour laquelle les sièges
+  restent sur le feutre, ne se recouvrent pas et laissent la place au centre — elle suit donc
+  l'écran, le nombre de joueurs et de cartes. Dernier recours sur un petit écran : les cartes du
+  joueur gardent 34 px, celles des autres rétrécissent. Les textes de la table grandissent avec les
+  cartes (`--echelle-texte`, ×1 à ×1,4). `main/` (cartes superposées, en autant de rangées qu'il
+  faut pour que le coin de chaque carte reste visible ; une carte n'est jamais recouverte à plus de
   75 %), `carte/`, `menu/` (lignes du menu et un bouton par action,
   ce qui manque à la sélection écrit sous un bouton inactif), `selection.ts` (cartes choisies et
   cible ; un bouton n'est actif que si `cartes_min ≤ sélection ≤ cartes_max` et la cible demandée
