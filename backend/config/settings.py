@@ -48,12 +48,18 @@ if not DEBUG and (not ALLOWED_HOSTS or "*" in ALLOWED_HOSTS):
 
 
 INSTALLED_APPS = [
-    "django.contrib.admin",
+    # Administration à second facteur TOTP obligatoire (admin_2fa/, CLAUDE.md
+    # « 2FA de l'administration ») : remplace "django.contrib.admin", même label.
+    "admin_2fa.apps.OTPAdminConfig",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "django_otp",
+    "django_otp.plugins.otp_totp",
+    "django_otp.plugins.otp_static",
+    "admin_2fa",
     "accounts",
     "tapis",
     "parties",
@@ -71,6 +77,9 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    # Rattache à request.user l'appareil OTP vérifié de la session (2FA de
+    # l'administration). Après AuthenticationMiddleware ; l'API anonyme n'en voit rien.
+    "django_otp.middleware.OTPMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
@@ -151,6 +160,13 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 VERSION = os.environ.get("FOXHOUSE_VERSION", "").strip() or "0.1.0"
 
 LOGIN_URL = "/admin/login/"
+
+# 2FA de l'administration (django-otp). Libellé affiché dans l'application
+# d'authentification. Limitation gardée (facteur 1 = 1 s, 2 s, 4 s… après chaque
+# mauvais code, par appareil).
+OTP_TOTP_ISSUER = "FoxHouse admin (foxhouse.foxugly.com)"
+OTP_TOTP_THROTTLE_FACTOR = 1
+OTP_STATIC_THROTTLE_FACTOR = 1
 
 # Angular lit le cookie CSRF et renvoie l'en-tête (convention HttpClient).
 CSRF_COOKIE_NAME = "XSRF-TOKEN"

@@ -118,6 +118,37 @@ gunicorn `127.0.0.1:8013` (WSGI, pas de Redis), PostgreSQL `foxhouse`, SSM `/fox
 pipeline : `backend/config/test_deploiement.py`. Version déployée : `backend/RELEASE` (écrit par la CI),
 rendue par `/health/`.
 
+## 2FA de l'administration
+
+`/admin/` exige un second facteur TOTP pour **tous** les comptes de l'équipe (django-otp 1.7.5 +
+qrcode 8.2, app `backend/admin_2fa/`, copie de l'implémentation de référence de la flotte, Poker_server).
+L'API et `/health/` n'en voient rien (`parties/tests/test_admin_2fa_api_inchangee.py`).
+
+- **Câblage** : `"admin_2fa.apps.OTPAdminConfig"` *remplace* `"django.contrib.admin"` (il fait de
+  `admin.site` un `Admin2FASite`, dont `has_permission` exige aussi `user.is_verified()`) ; plus
+  `django_otp`, `otp_totp`, `otp_static`, `admin_2fa` dans INSTALLED_APPS et
+  `django_otp.middleware.OTPMiddleware` juste après `AuthenticationMiddleware`. `OTP_TOTP_ISSUER` est
+  le libellé dans l'application d'authentification. Une pièce manquante fait échouer
+  `manage.py check` (`admin_2fa.E001-E004`).
+- **Parcours** : mot de passe sur `/admin/login/` → `/admin/2fa/setup/` (la 1re fois : QR + clé, un
+  code pour confirmer, 10 codes de secours affichés **une seule fois**) ou `/admin/2fa/verify/` (code
+  TOTP ou code de secours). Pages rendues par Django, CSRF, `never_cache`, aucun script ni style en ligne.
+- **Force brute** : django-otp freine chaque appareil (1 s, 2 s, 4 s… après chaque mauvais code) et
+  nginx met `/admin/2fa/` dans la même zone `foxhouse_admin_login` que le login (10 r/min par IP).
+- **Téléphone perdu / bloqué** (sur la machine, comme l'unité gunicorn) :
+
+  ```bash
+  sudo systemd-run --wait --pipe --quiet --uid=django --gid=www-data \
+    -p EnvironmentFile=/run/foxhouse/.env -p WorkingDirectory=/var/www/django_websites/FoxHouse/backend \
+    /var/www/django_websites/FoxHouse/.venv/bin/python manage.py admin_2fa_reset <email>
+  ```
+
+  efface les appareils du compte (nouvel enrôlement au prochain login) ; `--unlock` vide seulement le délai.
+- **Tests des pages d'admin** : `admin_2fa.testing.force_admin_login(client, user)`, pas
+  `client.force_login` (l'admin renverrait vers le second facteur).
+- **Secrets** : jamais dans un journal ni dans Sentry la clé TOTP, le QR ou un code de secours — les
+  vues les gardent dans des `Redacted` et le champ s'appelle `token` (nettoyé par Sentry).
+
 ## Ajouter un jeu
 
 1. Créer l'app (`manage.py startapp <jeu>`) ; ses règles n'importent pas Django.
