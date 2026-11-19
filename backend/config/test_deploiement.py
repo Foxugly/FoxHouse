@@ -82,6 +82,13 @@ class NginxTests(SimpleTestCase):
         self.assertIn("listen 443 ssl http2;", texte)
         self.assertIn("/etc/letsencrypt/live/foxugly.com/fullchain.pem", texte)
 
+    def test_login_et_second_facteur_de_l_admin_limites(self):
+        texte = lire("deploy/nginx/foxhouse.foxugly.com.conf")
+        self.assertRegex(texte, r"limit_req_zone \$binary_remote_addr zone=foxhouse_admin_login:\S+ rate=10r/m;")
+        for emplacement in ("location = /admin/login/ {", "location ^~ /admin/2fa/ {"):
+            bloc = texte.split(emplacement, 1)[1].split("}", 1)[0]
+            self.assertIn("limit_req zone=foxhouse_admin_login", bloc, emplacement)
+
     def test_csp_sans_script_en_ligne(self):
         texte = lire("deploy/nginx/foxhouse.foxugly.com.conf")
         csp = re.search(r'map \$host \$foxhouse_csp \{\s*default "([^"]+)";', texte).group(1)
