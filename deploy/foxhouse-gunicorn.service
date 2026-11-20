@@ -19,7 +19,7 @@ Environment="DB_CONN_MAX_AGE=60"
 # La machine joue ses coups dans la requête (2 000 au plus, en millisecondes) :
 # 2 workers suffisent et bornent la part de la machine partagée. Pas de log
 # d'accès (nginx journalise) ; les erreurs vont au journal (journalctl -u).
-ExecStart=/var/www/django_websites/FoxHouse/.venv/bin/gunicorn --workers 2 --timeout 30 \
+ExecStart=/var/www/django_websites/FoxHouse/.venv/bin/gunicorn --no-control-socket --workers 2 --timeout 30 \
     --bind 127.0.0.1:8013 \
     config.wsgi:application
 # Durcissement (OPERATIONS.md §3.22). Jamais ProtectSystem=strict : /var/www
