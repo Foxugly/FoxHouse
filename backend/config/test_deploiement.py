@@ -57,6 +57,8 @@ class UnitesTests(SimpleTestCase):
         self.assertIn("--bind 127.0.0.1:8013", texte)
         self.assertIn("config.wsgi:application", texte)
         self.assertIn('Environment="DB_CONN_MAX_AGE=60"', texte)
+        # gunicorn >= 25.1 : socket de contrôle partagé par tous les sites de l'utilisateur django.
+        self.assertIn("--no-control-socket", texte)
 
     def test_la_purge_garde_des_connexions_courtes(self):
         texte = lire("deploy/foxhouse-purge.service")
