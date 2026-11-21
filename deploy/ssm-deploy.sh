@@ -35,7 +35,13 @@ if [ ! -x .venv/bin/python ]; then
   python3 -m venv .venv
 fi
 .venv/bin/pip install --quiet --upgrade pip
-.venv/bin/pip install --quiet -r "$NEUF/backend/requirements.txt"
+# requirements.txt est un verrou haché (généré par uv depuis requirements.in) :
+# la production installe exactement les versions que la CI a testées. Sans
+# verrou, `pip install -r` ne mettait jamais à jour une version déjà installée
+# encore dans sa plage, et la box ratait les correctifs. --no-deps : tout est
+# dans le verrou ; pip check vérifie qu'il est cohérent.
+.venv/bin/pip install --quiet --require-hashes --no-deps -r "$NEUF/backend/requirements.txt"
+.venv/bin/pip check
 
 if [ ! -s "$ENV_FILE" ]; then
   echo "ERREUR : $ENV_FILE absent ou vide — foxhouse-env-fetch a-t-il tourné ? (systemctl status foxhouse-env-fetch)" >&2

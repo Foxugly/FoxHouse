@@ -7,6 +7,9 @@ Référence de la flotte : `D:\Projects\PycharmProjects\foxChess`. Code, comment
 
 ## Commandes backend (depuis `backend/`, PowerShell, `$env:DJANGO_DEBUG="True"`)
 
+- Dépendances : `.\.venv\Scripts\python.exe -m pip install -r requirements.in -r requirements-dev.txt` —
+  `requirements.txt` est le verrou haché de la production (Linux / 3.12, généré par uv, commande dans son
+  en-tête) ; il ne s'installe pas sous Windows (pas de `tzdata`). Détails : `README.md`.
 - Tests : `.\.venv\Scripts\python.exe manage.py test` (≈ 40 s : le rami rejoue 200 parties complètes)
 - Lint : `.\.venv\Scripts\python.exe -m ruff check .`
 - Migrations oubliées : `.\.venv\Scripts\python.exe manage.py makemigrations --check --dry-run`
