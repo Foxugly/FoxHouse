@@ -155,13 +155,21 @@ class ApiTests(AvecFactice, TestCase):
         self.assertEqual(reponse.status_code, 400)
 
     def test_json_trop_imbrique_400(self):
+        # Depuis Python 3.14, la limite de récursion du décodeur JSON suit la pile C
+        # réelle : 100 000 niveaux lèvent RecursionError sous Windows (pile de 1 Mo)
+        # mais passent sous Linux (8 Mo), où le corps, une liste, est alors refusé
+        # comme « pas un objet ». Ce qui compte : un 400, jamais un 500.
         corps = "[" * 100_000 + "]" * 100_000
         for url in ("/api/parties/", f"/api/parties/{self.creer().json()['id']}/actions/"):
             with self.subTest(url=url):
                 reponse = self.client.post(url, corps, content_type="application/json")
                 self.assertEqual(reponse.status_code, 400)
-                self.assertEqual(
-                    reponse.json()["erreur"], "Le corps de la requête n'est pas du JSON valide."
+                self.assertIn(
+                    reponse.json()["erreur"],
+                    (
+                        "Le corps de la requête n'est pas du JSON valide.",
+                        "Le corps de la requête doit être un objet JSON.",
+                    ),
                 )
 
     def test_graine_de_128_bits(self):
