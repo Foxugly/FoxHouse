@@ -2,7 +2,7 @@
 
 FoxHouse : site de jeux de cartes contre l'ordinateur, de la flotte Foxugly. Jeux : rami 51, 8 américain,
 dame de pique, président, whist à la couleur ; les suivants sont dans `docs/backlog.md`.
-Django (API JSON) dans `backend/`, Angular 21 dans `frontend/`. Conception : `docs/superpowers/specs/2026-10-31-foxhouse-design.md`.
+Django (API JSON) dans `backend/`, Angular 22 dans `frontend/`. Conception : `docs/superpowers/specs/2026-10-31-foxhouse-design.md`.
 Référence de la flotte : `D:\Projects\PycharmProjects\foxChess`. Code, commentaires et messages en français.
 
 ## Commandes backend (depuis `backend/`, PowerShell, `$env:DJANGO_DEBUG="True"`)
@@ -60,7 +60,7 @@ Une étape vaut `{"message", "vue"}` : le tapis les rejoue avant d'afficher la v
 - Chaque action est jouée sous `transaction.atomic()` + `select_for_update()`.
 - `vue.version` vaut toujours `Partie.version`. JSON illisible → 400 ; mauvaise méthode → 405.
 
-## Frontend (`frontend/`, Angular 21, Node 24)
+## Frontend (`frontend/`, Angular 22, Node 24)
 
 Commandes (depuis `frontend/`) : `npm ci`, `npm run lint`, `npm test` (Vitest, une passe),
 `npm run build`, `npm run format` (Prettier).
