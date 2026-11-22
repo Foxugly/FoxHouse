@@ -14,4 +14,4 @@ un jeu »). Le tapis Angular ne change pas pour un nouveau jeu.
 Demandés par Renaud le 2026-10-31 (whist : 2026-11-01). Autres jeux cités dans la conception (§1) : Texas hold'em,
 belote, blackjack.
 
-Autres chantiers : mise en production (plan 3).
+En production sur https://foxhouse.foxugly.com depuis le 2026-10-31 (`deploy/README.md`).

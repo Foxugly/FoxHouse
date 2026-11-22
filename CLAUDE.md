@@ -14,7 +14,7 @@ Référence de la flotte : `D:\Projects\PycharmProjects\foxChess`. Code, comment
 - Lint : `.\.venv\Scripts\python.exe -m ruff check .`
 - Migrations oubliées : `.\.venv\Scripts\python.exe manage.py makemigrations --check --dry-run`
 - Purge RGPD : `.\.venv\Scripts\python.exe manage.py purger_parties` — efface les parties non modifiées
-  depuis `RETENTION_PARTIES_JOURS` (30) jours et les sessions expirées ; à planifier en production.
+  depuis `RETENTION_PARTIES_JOURS` (30) jours et les sessions expirées ; planifiée en production chaque jour à 04:40 UTC par `foxhouse-purge.timer` (`deploy/`).
 - Santé : `GET /health/` → 200 ou 503
 
 ## Architecture (`backend/`)
