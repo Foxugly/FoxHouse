@@ -6,7 +6,7 @@
 # Le bundle de la CI (backend/, frontend/dist/, deploy/) vient d'être extrait par
 # django dans $APP/.bundle-neuf. Ce script :
 #   1. installe les dépendances dans $APP/.venv (hors du bundle : il survit aux
-#      déploiements) ;
+#      déploiements ; reconstruit sur place s'il n'est pas sur /usr/bin/python3.14) ;
 #   2. dans le NOUVEAU backend : collectstatic, migrate, check --deploy — avec la
 #      configuration de production (/run/foxhouse/.env) ;
 #   3. bascule : backend/, frontend/ et deploy/ sont remplacés d'un bloc par ceux
@@ -30,9 +30,26 @@ if [ "$(cat "$NEUF/backend/RELEASE" 2>/dev/null)" != "$SHA" ]; then
   exit 1
 fi
 
-if [ ! -x .venv/bin/python ]; then
-  # Premier déploiement : Python 3.12 d'Ubuntu 24.04, comme la CI.
-  python3 -m venv .venv
+# Le venv doit tourner sur $PYTHON (python3.14 de deadsnakes, à root, dans
+# /usr/bin), comme la CI. Absent (premier déploiement) ou sur une autre version,
+# il est (re)construit À SA PLACE — jamais construit ailleurs puis déplacé : les
+# scripts console (.venv/bin/gunicorn, que lance l'unité) ont le chemin du venv
+# écrit en dur dans leur shebang. L'ancien est gardé en .venv.prev et remis en
+# place si la reconstruction échoue.
+VENV="$APP/.venv"
+PYTHON=/usr/bin/python3.14
+PY_WANT="$("$PYTHON" -c 'import sys; print("%d.%d" % sys.version_info[:2])')"
+PY_HAVE="$("$VENV/bin/python" -c 'import sys; print("%d.%d" % sys.version_info[:2])' 2>/dev/null || echo none)"
+if [ "$PY_HAVE" != "$PY_WANT" ]; then
+  echo ">>> Reconstruction du venv : Python $PY_HAVE -> $PY_WANT..."
+  rm -rf "$VENV.prev"
+  if [ -e "$VENV" ]; then mv "$VENV" "$VENV.prev"; fi
+  if ! { "$PYTHON" -m venv "$VENV"          && "$VENV/bin/pip" install --quiet --require-hashes --no-deps -r "$NEUF/backend/requirements.txt"          && "$VENV/bin/pip" check; }; then
+    echo "ERREUR : reconstruction du venv ratée ; retour à l'ancien venv." >&2
+    rm -rf "$VENV"
+    if [ -e "$VENV.prev" ]; then mv "$VENV.prev" "$VENV"; fi
+    exit 1
+  fi
 fi
 .venv/bin/pip install --quiet --upgrade pip
 # requirements.txt est un verrou haché (généré par uv depuis requirements.in) :

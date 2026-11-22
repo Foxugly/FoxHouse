@@ -16,9 +16,9 @@ $env:DJANGO_DEBUG="True"
 ```
 
 Dépendances : les directes (plages) sont dans `backend/requirements.in` ; `backend/requirements.txt` est un
-**verrou haché** généré par uv pour Linux / Python 3.12 (la production), installé tel quel au déploiement
+**verrou haché** généré par uv pour Linux / Python 3.14 (la production), installé tel quel au déploiement
 (`--require-hashes --no-deps`, puis `pip check`). Après une modification de `requirements.in`, régénérer le
-verrou avec la commande de son en-tête (`uv pip compile requirements.in --generate-hashes --python-version 3.12
+verrou avec la commande de son en-tête (`uv pip compile requirements.in --generate-hashes --python-version 3.14
 --python-platform x86_64-unknown-linux-gnu -o requirements.txt`). Sous Linux (CI), installer en deux temps :
 `pip install --require-hashes -r requirements.txt` puis `pip install -r requirements-dev.txt` (une seule ligne
 hachée fait passer pip en mode hashes pour toute l'installation). **Sous Windows le verrou ne s'installe pas**

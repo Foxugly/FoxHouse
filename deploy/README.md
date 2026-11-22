@@ -7,7 +7,7 @@ Celery**. Application dans `/var/www/django_websites/FoxHouse` :
 
 ```
 /var/www/django_websites/FoxHouse/
-├── .venv/                 # créé au premier déploiement, gardé ensuite
+├── .venv/                 # créé au premier déploiement (python3.14), gardé ensuite ; reconstruit sur place s'il change de version
 ├── backend/               # Django (RELEASE = SHA déployé, staticfiles/ = collectstatic)
 ├── frontend/dist/frontend/browser/   # servi par nginx
 └── deploy/
@@ -28,7 +28,7 @@ Chaque étape touche la production : à faire avec l'accord de Renaud, dans cet 
 ```bash
 ss -lntp | grep -c ':8013 '                 # 0 : port libre
 nginx -T 2>/dev/null | grep -c foxhouse     # 0 : aucun vhost existant
-python3 --version                           # 3.12 (Ubuntu 24.04), comme la CI
+/usr/bin/python3.14 --version               # 3.14 (deadsnakes) : Python du venv, comme la CI
 nginx -V 2>&1 | grep -o brotli | head -1    # brotli : module présent (gzip_static suffit sinon)
 ```
 
@@ -156,7 +156,7 @@ Ce que fait chaque déploiement, dans l'ordre (`.github/workflows/deploy.yml`) :
 frontend (version injectée) → pré-compression → bundle `s3://foxugly-deploy/builds/foxhouse/` → SSM en
 root : miroir au SHA, `foxhouse-deploy-privileged.sh` (script SSM, unités, `foxhouse-env-fetch` démarré,
 minuterie activée, vhost + `nginx -t`) → django extrait le bundle dans `.bundle-neuf` → `ssm-deploy.sh`
-en django (pip, collectstatic, migrate, `check --deploy`, bascule des dossiers) → `systemctl restart
+en django (venv reconstruit sur place s'il n'est pas sur `/usr/bin/python3.14`, pip, collectstatic, migrate, `check --deploy`, bascule des dossiers) → `systemctl restart
 foxhouse-gunicorn` → normalisation des droits → contrôle de `/health/` (200 et version = SHA).
 
 Puis un administrateur (e-mail seul, §3.16) :
