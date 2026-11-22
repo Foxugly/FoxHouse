@@ -8,7 +8,7 @@ Référence de la flotte : `D:\Projects\PycharmProjects\foxChess`. Code, comment
 ## Commandes backend (depuis `backend/`, PowerShell, `$env:DJANGO_DEBUG="True"`)
 
 - Dépendances : `.\.venv\Scripts\python.exe -m pip install -r requirements.in -r requirements-dev.txt` —
-  `requirements.txt` est le verrou haché de la production (Linux / 3.12, généré par uv, commande dans son
+  `requirements.txt` est le verrou haché de la production (Linux / 3.14, généré par uv, commande dans son
   en-tête) ; il ne s'installe pas sous Windows (pas de `tzdata`). Détails : `README.md`.
 - Tests : `.\.venv\Scripts\python.exe manage.py test` (≈ 40 s : le rami rejoue 200 parties complètes)
 - Lint : `.\.venv\Scripts\python.exe -m ruff check .`
@@ -119,7 +119,9 @@ gunicorn `127.0.0.1:8013` (WSGI, pas de Redis), PostgreSQL `foxhouse`, SSM `/fox
 `deploy.yml` : la CI (`ci.yml`, appelée) puis le déploiement par bundle S3 + SSM. Mise en service,
 étapes hors dépôt et vérifications : `deploy/README.md`. Garde-fous des unités, du vhost et du
 pipeline : `backend/config/test_deploiement.py`. Version déployée : `backend/RELEASE` (écrit par la CI),
-rendue par `/health/`.
+rendue par `/health/`. Le venv `/var/www/django_websites/FoxHouse/.venv` tourne sur `/usr/bin/python3.14`
+(deadsnakes ; le `python3` du système reste 3.12) : `ssm-deploy.sh` le reconstruit sur place s'il est sur une
+autre version (l'ancien gardé en `.venv.prev`, remis en place si la reconstruction échoue).
 
 ## 2FA de l'administration
 
