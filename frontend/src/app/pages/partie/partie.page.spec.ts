@@ -131,7 +131,13 @@ describe('PartiePage', () => {
     expect(bandeau()).toBeNull();
     expect(texte()).toContain('finale');
     expect(bouton('Retourner')?.disabled).toBe(false);
-    expect(vi.getTimerCount()).toBe(0);
+    // La relecture ne reprend pas. (Que `passer` coupe sa minuterie est vérifié dans
+    // relecture.spec.ts : ici, jsdom ≥ 31 programme ses propres minuteries de focus.)
+    vi.advanceTimersByTime(10 * DELAI_ETAPE);
+    harness.detectChanges();
+    expect(bandeau()).toBeNull();
+    expect(texte()).toContain('finale');
+    expect(bouton('Retourner')?.disabled).toBe(false);
   });
 
   it('un clic sur la table pendant la relecture saute à la vue finale', async () => {
