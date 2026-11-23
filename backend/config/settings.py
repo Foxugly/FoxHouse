@@ -243,7 +243,6 @@ SENTRY_DSN = os.environ.get("SENTRY_DSN", "").strip()
 SENTRY_ENVIRONMENT = os.environ.get("SENTRY_ENVIRONMENT", "").strip()
 if SENTRY_DSN and SENTRY_ENVIRONMENT:
     import sentry_sdk
-    from sentry_sdk.integrations.django import DjangoIntegration
 
     from config.sentry_filtres import reglages_sentry
 
@@ -251,7 +250,6 @@ if SENTRY_DSN and SENTRY_ENVIRONMENT:
         dsn=SENTRY_DSN,
         environment=SENTRY_ENVIRONMENT,
         release=SENTRY_RELEASE or None,
-        integrations=[DjangoIntegration()],
         traces_sample_rate=float(os.environ.get("SENTRY_TRACES_SAMPLE_RATE", "0")),
         **reglages_sentry(),
     )
